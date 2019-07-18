@@ -1,0 +1,17 @@
+---
+title: "about"
+author: "Anh Do"
+date: "May 5, 2019"
+output: html_document
+---
+
+<span style="font-family:Arial; font-size:2em;">About Alice Do</span>
+
+<span style="font-family:Arial; font-size:1.1em;">Alice Do (Anh Do) is an aspiring data scientist who is also passionate in data visualization and data story telling. She is currently pursuing a Master of Science in Analytics, specializing in Data Science and Marketing Analytics from American University. </span>
+
+<span style="font-family:Arial; font-size:1.1em;">Alice developed this Shiny App both as a Final Exam submission for her Data Science class, and a presentation of her research regarding asthma prevalence in the U.S. </span>
+
+<span style="font-family:Arial; font-size:1.1em;">Connect with Alice on [LinkedIn](https://www.linkedin.com/in/anhphuongdo/)  </span>
+
+
+<span style="font-family:Arial; font-size:1.1em;">Follow her study and research journey on her [Blog](https://anhstudiesdata.wordpress.com/about-me/)  </span>
