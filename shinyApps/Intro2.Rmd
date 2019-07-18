@@ -1,0 +1,10 @@
+---
+title: "Intro2"
+author: "Anh Do"
+date: "May 6, 2019"
+output: html_document
+---
+
+![text](./Data/asthma_basics_asthmatic_bronchioles.png)
+<span style="font-family:Arial; font-size:0.8em;">Source: https://www.webmd.com/asthma/what-is-asthma#1</span>
+

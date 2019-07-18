@@ -1,0 +1,81 @@
+---
+title: "Project Prep"
+author: "Anh Do"
+date: "May 3, 2019"
+output: html_document
+---
+
+```{r packages, message = FALSE, warning = FALSE}
+##Preparation
+library(tidyverse)
+library(scales)
+
+##Visual
+library(viridis)
+library(cowplot)
+library(gridExtra)
+library(grid)
+library(usmap)
+library(maps)
+
+##Predictive modeling
+library(boot)
+library(broom)
+library(coefplot)
+library(modelr)
+library(ROCR)
+```
+
+```{r data, message = FALSE, warning = FALSE, cache = TRUE}
+if(!file.exists("Data")){dir.create("Data")}
+asthma <- read_csv("./Data/Asthma2017.csv", guess_max = 69000)
+
+#remove missing values for AsthmaStatus only
+health2017_narm <- asthma %>%
+  filter(!is.na(AsthmaStatus))
+
+#Data for all respondents who reported formerlly or currently having asthma 
+asthma2017 <- asthma %>%
+  filter(AsthmaStatus == "Current" | AsthmaStatus == "Former")
+
+#Data for all respondents who reported currently having asthma
+curr_ast_17 <- asthma2017 %>%
+  filter(AsthmaStatus == "Current")
+
+#Data for all respondents who reported formerlly having asthma
+form_ast_17 <- asthma2017 %>%
+  filter(AsthmaStatus == "Former")
+```
+
+```{r Map, fig.height = 5, fig.width = 9}
+CurrAsthmaState <- curr_ast_17 %>%
+  group_by(State) %>%
+  summarise(CurrAsthmaCount = n())
+
+SampleState <- health2017_narm %>%
+  group_by(State) %>%
+  summarize(SampleCount = n())
+
+ByState <- as_tibble(cbind(CurrAsthmaState, "TotalSampled" = SampleState$SampleCount))
+
+ByState <- ByState %>%
+  mutate(PercentByState = ByState$CurrAsthmaCount/ByState$TotalSampled*100,
+         StateName = cdlTools::fips(State, to = "Name"),
+         StateWithPercent = paste(cdlTools::fips(State, to = "Name"), as.character(PercentByState), "%"))
+  
+ByState$fips = ByState$State
+
+plot_usmap (data = ByState, values = "PercentByState", labels = TRUE, line = "white") +
+  scale_fill_continuous(name = "Currently having Asthma", low = "white", high = "steel blue", label = comma) +
+  theme(legend.position = "right")
+
+map.text("state", regions = c("Alabama"), labels = as.character(ByState[ByState$StateName == c("Alabama"), 5]))
+
+ByState %>% 
+      #filter(StateName == "California") %>%
+      select(StateName, CurrAsthmaCount, TotalSampled, PercentByState) %>%
+      rename(StateName = "State Name",
+             CurrAsthmaCount = "Respondents with Asthma",
+             TotalSampled = 'Total Respondents',
+             PercentByState = 'Asthma Percentage')
+```

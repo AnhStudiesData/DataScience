@@ -1,0 +1,8 @@
+---
+title: "profile"
+author: "Anh Do"
+date: "May 6, 2019"
+output: html_document
+---
+
+![text](./Data/AnhDo_photo.jpg)
