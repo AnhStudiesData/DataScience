@@ -16,7 +16,7 @@ output: html_document
 
 <span style="font-family:Arial; font-size:1.1em;">In short, factors related to asthma include, but not limited to: **_State_**, **_Sex_**, **_Age_**, **_Race_**, **_BMI_**, **_Education Level_**, **_Income Group_**, **_Smoker Status_**, **_Physical Activities_**, and **_Depressive Disorders_**. The desired data set for this App  narrows down to these ten variables, and ten other variables describing conditions related to current and former asthma patients. </span>
 
-<span style="font-family:Arial; font-size:1.1em;">The full analytics reports for U.S. Asthma Prevalence and Prediction (2017) can be viewed and download [here](https://drive.google.com/drive/u/2/folders/1NG109DQRXkmmF3QdmpRM6bj6_GnsJVzE).</span>
+<span style="font-family:Arial; font-size:1.1em;">The full analytics reports for U.S. Asthma Prevalence and Prediction (2017) can be viewed and download [here](https://drive.google.com/file/d/1wLX40hBIKFRZ4IDCtS1VSrGbN-FAB6Pz/view?usp=sharing).</span>
 
 <span style="font-family:Arial; font-size:1.1em;">The dataset used for this App can be viewed [here](https://drive.google.com/file/d/1Uhs6VWlGVUhpbofnZH54kxbO752vt_D0/view?usp=sharing).</span>
 
