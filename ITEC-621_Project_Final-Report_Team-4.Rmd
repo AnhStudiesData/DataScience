@@ -1,0 +1,645 @@
+---
+title: 'ITEC 621: Predictive Analytics - Final Report'
+author: "Anh Do, Xuemeng Han, Hang Ngo, Jennifer Wong"
+date: "May 2, 2019"
+output:
+  word_document: 
+    toc: yes
+    toc_depth: '3'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, eval = TRUE, include=FALSE, message = FALSE, warning = FALSE)
+```
+
+##Introduction
+
+###Analytics Question
+
+**What factors are significant, and what predictive model is the best for predicting life expectancy at birth (LEB)?** 
+
+This was a quantitative predictive question with LEB as the response variable. 
+
+###Predictive Goals
+
+The project’s analytics goal was prediction. The project aimed to find a predictive model that yielded the highest cross validation predictive accuracy when using a subset of the variables in the dataset to predict LEB.
+
+###Business Case
+
+LEB is one of the country-level statistics monitored by countries and global organizations to evaluate the quality of population health and economic development. Over the last 200 years, life expectancy worldwide has increased from the low 30s to 80s[^1] thanks to modernization and better standards of living. Increase in LEB is used as an indicator of improvement on population health. For example, the South Australia’s Strategic Plan set a goal to increase LEB in male by 5 percent and in female by 3 percent from 2000 to 2014[^2]. Having an accurate prediction of life expectancy can help countries understand whether their investment have been effective.  Furthermore, understanding what factors are related to changes in LEB can help a country direct its spending on health, planning for infrastructure as well as improving its healthcare system.
+
+##Dataset
+
+The original Life Expectancy dataset from Kaggle[^3] contains a total of 22 variables from the WHO’s data repository, tracking health and economic variables from 193 countries over 16 years (2000 - 2015). 
+
+An inspection of the data revealed many problems of missing values, incorrect value inputs, incomplete variable definitions, etc. prompting the collection of data from other data sources to improve the consistency and accuracy of predictors used for analytics. As stated in the descriptive analytics section below, the original Life Expectancy response variable was replaced by a different set of LEB data from gapminder. After researching the WHO data source indicated on Kaggle, we noticed some values in the original Life Expectancy data did not match up with the reports. There was also no clear definition of the estimation methods behind this set of data on Kaggle. Gapminder, on the other hand, has a more complete set of Life Expectancy measurements, and hence these numbers were used to replace the outcome variable values in the original dataset.
+
+Hepatitis B data was removed due to too many missing values and the lack of a more complete data set for replacement. BMI data was replaced by Obesity data due to its unreasonable range from 1 to 87.3, suggesting severe data inputting mistakes. The original Population, GDP, Income Index and Years of Schooling variables were also replaced with data from other sources with fewer missing values. More complete descriptions of the additional data source can be found in Appendix 1.  The final dataset is also attached in a separate file.
+
+The final dataset has one categorical variable (Status: developed or developing country). The rest of the variables, including the response variable, are numeric (such as life expectancy in years, GDP per capita in thousands of dollar, health expenditure as percentage of GDP per capita, percentage of population coverage of some vaccines, etc.). 
+
+## Descriptive Analytics
+
+### Outcome Variable
+
+Life expectancy at birth (in years) was the outcome variable. Updated life expectancy data was downloaded from gapminder[^4], which defined life expectancy as “the average number of years a newborn would live if current mortality patterns were to stay the same.” 
+
+### Main Predictors
+
+The predictors chosen for this analysis are socioeconomic and health related variables. Deadly diseases such as HIV/AIDS, percentage of infants’ death, obesity, etc. are health risk factors traditionally used to estimate life expectancy at birth [cite]. A country’s socioeconomic standing and healthcare expenditure are also expected to influence population’s health, which may ultimately affect life expectancy.
+
+### Descriptive Analytics Discussion
+
+An inspection of descriptive analytics (Appendix 2 and 3) shows that there are some level of correlation among the following variables:
+
+Life expectancy is positively correlated with most of the economic indicators. It is generally positively correlated with vaccine coverage variables and negatively correlated with deaths variables. This indicates that life expectancy is generally higher in countries with better economic and healthcare conditions.
+Among the economic indicators, GDP has a strong positive correlation with Percentage Expenditure on Health, Years of Schooling and Income Index. This indicates that countries that have high GDP tends to spend more on healthcare, and have better education and income.
+
+Among the health indicators, some vaccine coverage has strong correlation with the others. This is explained by the fact that these vaccines (e.g., polio and diphtheria) are sometimes administered together.
+
+### Data Pre-Processing
+
+An OLS model was run with the full data set and all the predictors to inspect for any OLS assumptions violations. The QQ-plot suggested approximately normal distribution (Appendix 4). In addition, the residuals plot indicated some signs of heteroscedasticity with many smaller separated clusters of residuals (Appendix 5). The Breusch-Pagan (BP) test of 302.85 was significant, highlighting heteroskedasticity problem. The Condition Index (CI) and Variance Inflation Factors (VIF) suggested the presence of multicollinearity. Centering and standardizing the data reduced the multicollinearity problem significantly, but did not entirely fix it. The CI decreased from 1.8 billion to 57. The main “culprits” for multicollinearity were InfantDeaths and UnderFiveDeaths (both VIFs were close to 300). InfantDeaths was removed from the dataset since UnderFiveDeaths had a higher correlation with LifeExpectancy (Appendix 6). The CI fell to 9.45 and no VIFs exceeded 10.
+
+## Predictive Analytics Methods
+
+###Specifications to Resolve OLS Assumptions Violation
+
+To address heteroskedasticity, a WLS model was run. For the dimensionality issues, Ridge, Least Absolute Shrinkage and Selection Operator (LASSO), Principle Component Regression (PCR), and Partial Least Squares (PLS) were all included as potential analytics methods. Further, since our analytic goal is predictive accuracy, a Regression Tree was also performed and evaluated along with the other models using cross-validation.
+
+### Variable Selection
+
+After inspecting for heteroscedasticity and multicollinearity problems, the best subset and stepwise methods are used to determine the optimal number of variables to be included in the model. Both methods yield the same 14 variables as optimal, which are: AdultMortality, Alcohol, PercentExpenditure, Measles, Obesity, UnderFiveDeaths, Polio, TotalExpenditure, Diphtheria, HIV_AIDS, Population,  IncomeIndex, YrsOfSchool and Status.
+
+## Results and Discussion
+
+In order to perform cross-validation, the dataset was divided into a 60% training set and a 40% test set to be used for all models. The following models were trained with two specifications (17 variables and 14 variables): WLS, Ridge, LASSO, PCR, PLS, and Regression Tree. These models were chosen to address heteroskedasticity (WLS) and dimensionality (Ridge, LASSO, PCR, PLS). Regression Tree was chosen because it is a non-parametric model not restricted by OLS assumptions. The test Root Mean Squared Errors (RMSE) were calculated for each model (Appendix 7). The model and specification with the lowest RMSE was chosen to perform prediction for the whole dataset.
+
+The RMSE results for both the full regression tree and reduced regression tree models were exactly the same at 0.389783. This was the lowest RMSE across all models. This likely occurred because the reduced model only had three fewer variables than the full one and these predictors were likely not important when performing the tree splitting algorithm. Both the full and reduced tree models produced the same tree diagram, which are displayed in Appendix 8. 
+
+## Conclusion
+
+Since our analytics goal was predictive accuracy, the regression tree, which had the lowest RMSE, was chosen. After refitting to the entire dataset, the tree model first partitions the data based on number of deaths per 1,000 live births (0-4 years) due to HIV_AIDS. Countries with this rate lower than 0.95 generally have higher life expectancies compared to countries with a high HIV_AIDS rate, especially if the rate is higher than 5.05. A random forest model was also generated to analyze variable importance and confirmed that HIV_AIDS was the most important variable that contributed to the reduction of MSE when predicting LifeExpectancy (Appendix 9). This shows how deadly HIV/AIDS can be in countries where the disease is enormously widespread.  
+
+Lesson learned:
+
+* Kaggle datasets need to be inspected carefully before analyzing. As briefly discussed above, the original dataset had missing values and invalid data. We compared the dataset with reliable sources such as the original WHO data, World Bank, etc., which helped us identify major inputting problems (i.e. invalid BMI data). 
+
+* If the original data needs to be dropped or replaced, it is important to have clear rationale on the new data chosen. For example, we excluded Hepatitis B immunization coverage, because no data source with more data was available. The reason for this was because some developed countries such as the UK had low levels of Hepatitis B, therefore did not keep track of this vaccine administration. Another example is the replacement of BMI data with Obesity. According to WHO, a BMI larger than 30 kg/m<sup>2</sup> indicates that the person is obese. The original dataset contains many country’s average BMI larger than 80 kg/m<sup>2</sup>, which was unreasonable. We used a more reliable dataset from WHO showing the percentage of population for each country who are obese. 
+
+
+
+##Appendix
+
+```{r packages}
+options(scipen=4)
+library(glmnet) 
+library(ISLR)
+library(tidyverse)
+library(perturb)
+library(car)
+library(lmtest)
+library(HH)
+library(leaps)
+library(lm.beta)
+library(pls)
+library(tree)
+library(caret)
+library(randomForest)
+library(GGally)
+```
+
+```{r loadData}
+if(!file.exists("Data")){dir.create("Data")}
+Life <- read_csv("./Data/LifeExpectancyclean.csv")
+PopGDP <- read_csv("./Data/PopGDP_WB.csv")
+Income <- read_csv("./Data/Income index.csv")
+School <- read_csv("./Data/Mean years of schooling (years).csv")
+life_expectancy_years <- read_csv("Data/life_expectancy_years.csv")
+obesity <- read_csv("./Data/Obesity.csv")
+```
+
+```{r cleanCountry}
+names(life_expectancy_years) = c('Country', 2000:2015)
+
+life_expectancy_years2 <- life_expectancy_years %>% 
+  tidyr::gather(Year, LifeExpectancy, -Country)
+
+life_expectancy_years2$Year <- as.numeric(life_expectancy_years2$Year)
+
+life_expectancy_years3 <- life_expectancy_years2 %>%
+  dplyr::mutate(newcountry = case_when(
+    Country=="Vietnam" ~ "Viet Nam",
+    Country=="Bolivia"~ "Bolivia (Plurinational State of)",
+    Country=="Brunei" ~ "Brunei Darussalam",
+    Country=="Cape Verde" ~ "Cabo Verde",
+    Country=="Congo, Dem. Rep." ~ "Democratic Republic of the Congo",
+    Country=="Congo, Rep." ~ "Congo",
+    Country=="Cote d'Ivoire" ~ "Ivory Coast",
+    Country=="Czech Republic" ~ "Czechia",
+    Country=="Iran" ~ "Iran (Islamic Republic of)",
+    Country=="North Korea" ~ "Democratic People's Republic of Korea",
+    Country=="Kyrgyz Republic" ~ "Kyrgyzstan",
+    Country=="Lao" ~ "Lao People's Democratic Republic",
+    Country=="Micronesia, Fed. Sts." ~ "Micronesia (Federated States of)",
+    Country=="Moldova" ~ "Republic of Moldova",
+    Country=="South Korea" ~ "Republic of Korea",
+    Country=="Russia" ~ "Russian Federation",
+    Country=="Macedonia, FYR" ~ "The former Yugoslav republic of Macedonia",
+    Country=="Slovak Republic" ~ "Slovakia",
+    Country=="St. Lucia"  ~ "Saint Lucia",
+    Country=="St. Vincent and the Grenadines" ~ "Saint Vincent and the Grenadines",
+    Country=="Syria" ~ "Syrian Arab Republic",
+    Country=="Tanzania" ~ "United Republic of Tanzania",
+    Country=="United Kingdom" ~ "United Kingdom of Great Britain and Northern Ireland",
+    Country=="United States" ~ "United States of America",
+    Country=="Venezuela" ~ "Venezuela (Bolivarian Republic of)",
+    TRUE ~ as.character(Country)
+    )
+  ) %>%
+  filter(!(newcountry %in% c("Andorra", "Palestine"))) %>%
+  dplyr::select(-Country) %>%
+  rename(Country = newcountry)
+
+
+data <- full_join(Life, life_expectancy_years3, by = c("Year", "Country"))
+
+data <- data %>% dplyr::select(-`Life expectancy`)
+```
+
+```{r cleanIndicators}
+names(PopGDP) <- c("A", "B", "Country", "C", 2000:2015)
+
+GDP <- PopGDP %>% filter(A == "GDP per capita (current US$)") %>%
+  gather(Year, GDP, 5:20)
+
+GDP$Year <- as.numeric(GDP$Year)
+
+Pop <- PopGDP %>% filter(A != "GDP per capita (current US$)") %>%
+  gather(Year, Population, 5:20)
+
+Pop$Year <- as.numeric(Pop$Year)
+
+Income <- Income %>% gather(Year, IncomeIndex, -Country)
+
+Income$Year <- as.numeric(Income$Year)
+
+School <- School %>% gather(Year, YrsOfSchooling, -Country)
+
+School$Year <- as.numeric(School$Year)
+
+ObesityPercent <- obesity %>% 
+  gather(Year, Obesity, 2:17) %>%
+  mutate(Obesity = stringr::str_replace_all(Obesity, "\\[.*\\]", ""))
+
+ObesityPercent$Obesity <- as.numeric(ObesityPercent$Obesity)
+ObesityPercent$Year <- as.numeric(ObesityPercent$Year)
+```
+
+```{r cleanAgg}
+LifeExpectancy1 <- data %>%
+  left_join(GDP, by = c("Country", "Year"))%>%
+  left_join(Pop, by = c("Country", "Year")) %>%
+  left_join(Income, by = c("Country", "Year")) %>%
+  left_join(School, by = c("Country", "Year")) %>%
+  left_join(ObesityPercent, by = c("Country", "Year")) %>%
+  dplyr::select(-(Country:Year), -GDP.x, -Population.x, -(A.x:C.x), -(A.y:C.y), -Schooling, -`Income composition of resources`, -`Hepatitis B`, -BMI)
+
+```
+
+```{r names&types}
+names(LifeExpectancy1) <- c("Status", "AdultMortality", "InfantDeaths", "Alcohol", "PercentExpenditure", "Measles", "UnderFiveDeaths", "Polio", "TotalExpenditure", "Diphtheria", "HIV_AIDS", "ThinTenNineteen", "ThinFiveNine", "LifeExpectancy", "GDP", "Population", "IncomeIndex", "YrsOfSchool", "Obesity")
+
+LifeExpectancy1$GDP <- as.numeric(LifeExpectancy1$GDP)
+LifeExpectancy1$Population <- as.numeric(LifeExpectancy1$Population)
+LifeExpectancy1$IncomeIndex <- as.numeric(LifeExpectancy1$IncomeIndex)
+LifeExpectancy1$YrsOfSchool <- as.numeric(LifeExpectancy1$YrsOfSchool)
+LifeExpectancy1$Status <- as.factor(LifeExpectancy1$Status)
+LifeExpectancy1$LifeExpectancy <- as.numeric(LifeExpectancy1$LifeExpectancy)
+LifeExpectancy1 <- LifeExpectancy1 %>% dplyr::select(LifeExpectancy, everything())
+
+LEB <- na.omit(LifeExpectancy1)
+
+#write_csv(LEB, "./Data/Life_Expectancy_Final.csv")
+```
+
+###Appendix 1: Description of Variables
+
+1. **Economic indicators:**
+
+  + *Status*: Categorical variable, whether the country is classified as Developed or Developing country
+
+  + *GDP*: US Dollars, GDP per capita in current US Dollars (updated using World Bank data[^5])
+
+  + *Population*: population of each country (updated using World Bank data[^6])
+
+  + *TotalExpenditure*: %, total government health expenditure as a percentage of total government expenditure
+
+  + *PercentageExpenditure*: %, health expenditure as a percentage of GDP per capita
+
+  + *IncomeIndex*: Calculated as the Income/composition of resources (updated using United Nations Human Development Reports[^7])
+
+  + *YrsOfSchool*: Mean years of schooling (updated using United Nations Human Development Reports[^8])
+
+2. **Health indicators:**
+
+  + *AdultMortality*: Rates of deaths per 1000 population (in adults 15 - 60 years old) 
+
+  + *InfantDeaths*: Number of infant deaths per 1000 population
+
+  + *UnderFive Deaths*: Number of under-five  deaths per 1000 population
+
+  + *Polio and Diphtheria*: %, percentage of immunization coverage for each disease among 1-year-old
+
+  + *Measles*: number of reported cases per 1000 population
+
+  + *HIV/AIDS*: number of deaths per 1000 live births HIV/AIDS (0-4 years)
+
+  + *ThinnessFivetoNine* and *ThinnessNineteen*: %, percentage of prevalence of thinness among children age 5 to 9, and children and adolescents age 10 to 19, respectively. 
+
+  + *Obesity*: Prevalence of obesity among adults (BMI >=30), age-standardized (data from WHO[^9])
+
+  + *Alcohol*: liter of alcohol consumption per capita (15+)
+  
+
+###Appendix 2: Correlation Matrix - Economic Indicators
+
+```{r CorrMatEcons, include = TRUE, fig.width = 16, fig.height=9}
+ggpairs(data = LEB[,c("LifeExpectancy","Status","PercentExpenditure", "TotalExpenditure", "GDP", "Population", "IncomeIndex", "YrsOfSchool")], title = "Correlation Matrix - Economic Indicators")
+```
+
+###Appendix 3: Correlation Matrix - Health Indicators
+
+```{r CorrMatHealth, include = TRUE, fig.width = 16, fig.height=9}
+ggpairs(data = LEB[,c("LifeExpectancy", "AdultMortality", "UnderFiveDeaths", "Obesity", "Polio", "Diphtheria", "HIV_AIDS", "Alcohol", "ThinTenNineteen", "ThinFiveNine")], title = "Correlation Matrix - Health Indicators")
+```
+
+###Appendix 4: OLS Residuals QQ-Plot
+
+```{r qqplot, include = TRUE}
+lm.ols <- lm(LifeExpectancy ~., data = LEB)
+plot(lm.ols, which=2)
+```
+
+###Appendix 5: Residuals vs. Fitted Plot
+
+```{r residualplot, include = TRUE}
+plot(lm.ols, which=1)
+```
+
+###Appendix 6: Correlation matrix - InfantDeaths and UnderFiveDeaths
+
+```{r CorrMatDeaths, include = TRUE, fig.width = 16, fig.height=9}
+ggpairs(data = LEB[,c("LifeExpectancy", "UnderFiveDeaths", "InfantDeaths")], title = "Correlation Matrix - InfantDeaths and UnderFiveDeaths")
+```
+
+###Appendix 7: Test RMSE Cross-Validation Results
+
+
+```{r partition}
+LEB.stnd <- data.frame(scale(LEB[,-2], center=TRUE, scale=TRUE))
+LEB.stnd <- cbind(LEB.stnd, LEB[,2])
+
+set.seed(12345)
+
+train <- sample(1:nrow(LEB.stnd), 0.6*nrow(LEB.stnd))
+test <- seq(1:nrow(LEB.stnd))[-train]
+train_subset <- LEB.stnd[train,]
+test_subset <- LEB.stnd[test,]
+test_result <- LEB.stnd[-train, 1]
+```
+
+
+```{r wls}
+ols.stnd.subset <- lm(LifeExpectancy ~., data = train_subset)
+wls.full.fit <- lm(LifeExpectancy ~., weights=1/ols.stnd.subset$residuals^2, data = train_subset)
+summary(wls.full.fit)
+
+wls.full.pred <- predict(wls.full.fit, test_subset)
+
+wls.full.RMSE = (mean((wls.full.pred-test_result)^2))^0.5 
+```
+
+
+```{r RidgeLassoPrep}
+x.train = model.matrix(LifeExpectancy ~., data = train_subset)[,-1]
+y.train = train_subset$LifeExpectancy
+
+x.test = model.matrix(LifeExpectancy ~., data = test_subset)[,-1]
+y.test = test_subset$LifeExpectancy
+```
+
+```{r Ridge}
+
+#10FCV
+
+ridge.cv = cv.glmnet(x.train, y.train, alpha = 0)
+ridge.bestlam = ridge.cv$lambda.min
+ridge.mse = min(ridge.cv$cvm)
+
+cbind("Best Lambda" = ridge.bestlam, "Best Ridge MSE" = ridge.mse)
+
+ridge.coef = coef(ridge.cv, s = ridge.bestlam)
+
+ridge.pred = predict(ridge.cv, s=ridge.bestlam, newx=x.test)
+
+ridge.full.RMSE = (mean((ridge.pred-y.test)^2))^0.5 
+```
+
+```{r LASSO}
+lasso.cv=cv.glmnet(x.train, y.train, alpha = 1) 
+
+lasso.bestlam <- lasso.cv$lambda.min 
+lasso.mse=min(lasso.cv$cvm)
+
+cbind("Best LASSO Lambda"=lasso.bestlam, "Best LASSO MSE"=lasso.mse)
+
+lasso.pred = predict(lasso.cv, s=lasso.bestlam, newx=x.test)
+
+lasso.full.RMSE = (mean((lasso.pred-y.test)^2))^0.5 
+```
+
+```{r compare}
+ridge.coef = coef(ridge.cv, s = ridge.bestlam)
+
+ols.coef = coef(ridge.cv, s = 0)
+
+lasso.coef = coef(lasso.cv, s = lasso.bestlam)
+
+cbind(ridge.coef, lasso.coef, ols.coef)
+```
+
+
+```{r PCR}
+pcr.fit <- pcr(LifeExpectancy ~., data = train_subset, scale = T, validation = "CV")
+
+validationplot(pcr.fit, val.type = "RMSEP", legendpos = "topright") 
+
+summary(pcr.fit)  
+
+pcr.pred <- predict(pcr.fit, test_subset, ncomp = 17)
+
+pcr.full.RMSE = (mean((pcr.pred-test_result)^2))^0.5
+```
+
+
+
+```{r PLS}
+pls.fit = plsr(LifeExpectancy ~., data = train_subset, scale = T, validation = "CV")
+
+validationplot(pls.fit, val.type = "RMSEP", legendpos = "topright") 
+
+summary(pls.fit) 
+
+pls.pred <- predict(pls.fit, test_subset, ncomp=17)
+
+pls.full.RMSE = (mean((pls.pred - test_result)^2))^0.5
+```
+
+```{r tree from 620, fig.width = 16, fig.height = 9}
+life.tree <- tree(LifeExpectancy ~ ., data=train_subset)
+# Its default value is 0.01
+
+plot(life.tree)
+text(life.tree, cex=1.0)
+
+life.tree.predictions <- predict(life.tree,test_subset)
+tree.RMSE <- (mean((test_result-life.tree.predictions)^2))^0.5
+
+#Find the best mindev
+best.mindev <- -1
+RMSE <- -1
+best.RMSE <- 99999999
+for (i in 1:100) {
+  life.tree <- tree(LifeExpectancy ~ ., data=train_subset, mindev=0.0005*i)
+  life.tree.predictions <- predict(life.tree,LEB.stnd)[-train]
+  RMSE <- (mean((test_result-life.tree.predictions)^2))^0.5
+  if (RMSE < best.RMSE) {
+    best.mindev <- 0.0005*i
+    best.RMSE <- RMSE
+  }
+}
+print(paste("The optimal value of mindev is",best.mindev,"with a RMSE of",best.RMSE))
+
+#best.mindev is .0005, a really larger tree.... So I kept it at the default, 0.01
+```
+
+```{r Prof Espinosa tree CV}
+cv.life=cv.tree(life.tree) 
+
+# Let's plot tree size (number of terminal nodes) vs. deviance
+
+plot(cv.life$size,cv.life$dev,type='b') 
+
+# But let's prune to just 3 terminal nodes
+
+prune.life=prune.tree(life.tree, best=3) 
+plot(prune.life)
+text(prune.life, cex=0.7)
+
+life.prune.predictions <- predict(prune.life,test_subset)
+(mean((test_result-life.prune.predictions)^2))^0.5
+```
+
+
+```{r step}
+fit.full <- lm(LifeExpectancy ~., data = LEB.stnd)
+fit.null <- lm(LifeExpectancy ~ 1, data = LEB.stnd)
+fit.step <- step(fit.full, scope=list(lower=fit.null, upper=fit.full), direction = "both", test="F", k=3.8)
+```
+
+
+```{r bestsubset}
+reg.full <- regsubsets(LifeExpectancy ~., LEB.stnd, nvmax=17)
+reg.summary <- summary(reg.full)
+
+reg.summary 
+par(mfrow=c(2,2)) # 2 x 2 layout
+
+# RSS
+plot(reg.summary$rss, xlab="Number of Variables", ylab="RSS",type="l")
+
+# Adjusted R-Square
+plot(reg.summary$adjr2, xlab="Number of Variables", ylab="Adjusted RSq", type="l")
+
+cbind("RSS" = reg.summary$rss, "AdjR2" = reg.summary$adjr2)
+```
+
+
+```{r reduce}
+reduce <- LifeExpectancy ~ AdultMortality + Alcohol + PercentExpenditure + UnderFiveDeaths + Polio + TotalExpenditure + Diphtheria + HIV_AIDS + ThinTenNineteen + GDP + Population + IncomeIndex + YrsOfSchool + Obesity
+```
+
+```{r reducedwls}
+ols.red <- lm(reduce, data=train_subset)
+wls.red <- lm(reduce, data = train_subset, weights = 1/ols.red$residuals^2)
+summary(wls.red)
+
+wls.red.pred <- predict(wls.red, test_subset)
+
+wls.red.RMSE = (mean((wls.red.pred-test_result)^2))^0.5
+```
+
+
+
+```{r RidgeLassoPrepRed}
+x.red.train = model.matrix(reduce, data = train_subset)[,-1]
+y.red.train = train_subset$LifeExpectancy
+
+x.red.test = model.matrix(reduce, data = test_subset)[,-1]
+```
+
+```{r Ridge.red}
+
+#10FCV
+
+ridge.cv.red = cv.glmnet(x.red.train, y.red.train, alpha=0)
+ridge.bestlam.red = ridge.cv.red$lambda.min
+ridge.mse.red = min(ridge.cv.red$cvm)
+
+cbind("BestRidgeLambda.Reduced" = ridge.bestlam, "BestRidgeMSE.Reduced" = ridge.mse.red)
+
+ridge.coef.red = coef(ridge.cv.red, s = ridge.bestlam.red)
+
+ridge.red.pred = predict(ridge.cv.red, s=ridge.bestlam.red, x.red.test)
+
+ridge.red.RMSE = (mean((ridge.red.pred - test_result)^2))^0.5
+```
+
+```{r LASSO.red}
+lasso.cv.red = cv.glmnet(x.red.train, y.red.train, alpha=1) 
+
+lasso.bestlam.red <- lasso.cv.red$lambda.min 
+lasso.mse.red = min(lasso.cv.red$cvm)
+
+cbind("BestLASSOLambda.Reduced"=lasso.bestlam, "BestLASSOMSE.Reduced"=lasso.mse.red)
+
+lasso.coef.red = coef(lasso.cv.red, s = lasso.bestlam.red)
+
+lasso.red.pred = predict(lasso.cv.red, s=lasso.bestlam.red, x.red.test)
+
+lasso.red.RMSE = (mean((lasso.red.pred - test_result)^2))^0.5
+```
+
+```{r compare.red}
+ridge.coef.red = coef(ridge.cv.red, s = ridge.bestlam.red)
+
+ols.coef.red = coef(ridge.cv.red, s = 0)
+
+lasso.coef.red = coef(lasso.cv.red, s = lasso.bestlam.red)
+
+cbind(ridge.coef.red, lasso.coef.red, ols.coef.red)
+```
+
+```{r PCR.red}
+pcr.fit.red <- pcr(reduce, data = train_subset, scale = T, validation = "CV")
+
+validationplot(pcr.fit.red, val.type = "RMSEP", legendpos = "topright") 
+
+summary(pcr.fit.red)  
+
+pcr.pred.red <- predict(pcr.fit.red, test_subset, ncomp = 14)
+
+pcr.red.RMSE = (mean((pcr.pred.red-test_result)^2))^0.5
+```
+
+```{r PLS.red}
+pls.fit.red = plsr(reduce, data = train_subset, scale = T, validation = "CV")
+
+validationplot(pls.fit.red, val.type = "RMSEP", legendpos = "topright") 
+
+summary(pls.fit.red) 
+
+pls.pred.red <- predict(pls.fit.red, test_subset, ncomp = 14)
+
+pls.red.RMSE = (mean((pls.pred.red-test_result)^2))^0.5
+```
+
+
+```{r reduced tree, fig.width = 16, fig.height=9}
+life.tree.red <- tree(reduce, data=train_subset)
+plot(life.tree.red)
+text(life.tree.red, cex=1.0)
+
+life.reduced.predictions <- predict(life.tree.red,test_subset)
+tree.reduced.RMSE <- (mean((test_result-life.reduced.predictions)^2))^0.5
+```
+
+
+
+```{r RMSEtables, include = TRUE}
+knitr::kable(cbind("wls.full" = wls.full.RMSE,
+      "ridge.full" = ridge.full.RMSE,
+      "lasso.full" = lasso.full.RMSE,
+      "pcr.full" = pcr.full.RMSE,
+      "pls.full" = pls.full.RMSE,
+      "tree.full" = tree.RMSE), 
+      caption = "RMSE for Full Models")
+
+knitr::kable(cbind("wls.red" = wls.red.RMSE,
+      "ridge.red" = ridge.red.RMSE,
+      "lasso.red" = lasso.red.RMSE,
+      "pcr.red" = pcr.red.RMSE,
+      "pls.red" = pls.red.RMSE,
+      "tree.red" = tree.reduced.RMSE),
+      caption = "RMSE for Reduced Models")
+```
+
+###Appendix 8: Regression Tree Final Model
+
+```{r treetest.full, include = TRUE, fig.width = 16, fig.height = 9}
+life.tree.reg <- tree(LifeExpectancy ~ ., data=LEB)
+plot(life.tree.reg)
+text(life.tree.reg, cex=1.0)
+
+tree.predictions <- predict(life.tree.reg, LEB)
+mean(data.matrix((LEB[,1]-tree.predictions)^2))^0.5
+```
+
+```{r treetest.red, include = TRUE, fig.width = 16, fig.height = 9}
+life.tree.reg.red <- tree(reduce, data=LEB)
+plot(life.tree.reg.red)
+text(life.tree.reg.red, cex=1.0)
+
+tree.predictions.red <- predict(life.tree.reg.red, LEB)
+mean(data.matrix((LEB[,1]-tree.predictions.red)^2))^0.5
+```
+
+###Appendix 9: Random Forest Variable Importance
+
+```{r Random Forest, include = TRUE, fig.width = 16, fig.height = 9}
+rf.life.stnd <- randomForest(LifeExpectancy ~ ., data=train_subset, mtry=10, importance=T)
+rf.life.stnd # Inspect the results
+plot(rf.life.stnd) 
+
+varImpPlot(rf.life.stnd) # We can also plot the results
+importance(rf.life.stnd) # To view the importance of each variable
+
+rf.predictions = predict(rf.life.stnd, test_subset) 
+plot(rf.predictions, test_result, xlab="Predicted", ylab="Actual", main="Variable Importance for Full Random Forest") # Then plot predicted vs. actual
+abline(0,1, col="red")
+```
+
+```{r RandomForestRed,include = TRUE, fig.width = 16, fig.height = 9}
+rf.life.stnd.red <- randomForest(reduce, data=train_subset, mtry=10, importance=T)
+rf.life.stnd.red # Inspect the results
+plot(rf.life.stnd.red) 
+
+varImpPlot(rf.life.stnd.red) # We can also plot the results
+importance(rf.life.stnd.red) # To view the importance of each variable
+
+rf.predictions.red = predict(rf.life.stnd.red, test_subset) 
+plot(rf.predictions.red, test_result, xlab="Predicted", ylab="Actual", main="Variable Importance for Reduced Random Forest") # Then plot predicted vs. actual
+abline(0,1, col="red")
+```
+
+
+[^1]: https://ourworldindata.org/life-expectancy "Max Roser (2019) - Life Expectancy. Published online at OurWorldInData.org." 
+[^2]: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2888015/#b17 "Stiefel, M. C., Perla, R. J., & Zell, B. L. (2010, March). A healthy bottom line: Healthy life expectancy as an outcome measure for health improvement efforts. Retrieved May 1, 2019"
+[^3]: https://www.kaggle.com/kumarajarshi/life-expectancy-who  "Life Expectancy (WHO) Statistical Analysis on factors influencing Life Expectancy. Retrieved May 1, 2019"
+[^4]: https://www.gapminder.org/data/documentation/gd004/ "Gapminder - Life Expectancy at Birth. Last updated: 2019. Retrieved April 25, 2019"
+[^5]: https://databank.worldbank.org/data/reports.aspx?source=2&series=SP.POP.TOTL&country= "World Development Indicators. (n.d.). Retrieved April 13, 2019"
+[^6]: https://databank.worldbank.org/data/reports.aspx?source=2&series=NY.GDP.PCAP.CD&country=  "World Development Indicators. (n.d.). Retrieved April 13, 2019" 
+[^7]: http://hdr.undp.org/en/indicators/103606 "Human Development Reports. (n.d.). Retrieved April 13, 2019"
+[^8]: http://hdr.undp.org/en/indicators/103606 "Human Development Reports. (n.d.). Retrieved April 13, 2019"  
+[^9]: http://apps.who.int/gho/data/node.main.A900A?lang=en "GHO | By category | Prevalence of obesity among adults, BMI ≥ 30, age-standardized - Estimates by country. (n.d.). Retrieved May 1, 2019" 
