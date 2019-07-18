@@ -1,0 +1,815 @@
+---
+title: "US Asthma Prevalence 2016"
+author: "Anh Do"
+date: "November 29, 2018"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+#Introduction
+
+Millions of Americans are affected by asthma every year. Asthma is a very common chronic respiratory disease where a person's airways to the lung are inflamed, narrowed, swollen, and often produce extra thickened mucus which make breathing difficult (Mayo Clinic, 2018). Asthma may not pose a major problem to some people, but for others, it can gravely interfere with daily activities. An asthma-attack can be life-threatening. Studying demographic trends and risk factors associated with asthma is important for asthma prevention measures, and treatments of asthma symptoms.
+
+The Behavioral Risk Factor Surveillance System (BRFSS) is a state-based cross-sectional telephone survey initiated by the Centers for Disease Control and Prevention (CDC). The state health departments have been conducting the survey monthly over land-lines and cellular telephones using a standardized questionnaire and other assistance from the CDC. The survey data sets contain relevant data that are useful for asthma analysis under the scope of this project.
+
+#Dataset Description and Cleaning
+
+##Description of Original Dataset
+
+The original data set was obtained from the CDC website, under the Behavioral Risk Factor Surveillance System, following this [link](https://www.cdc.gov/brfss/smart/smart_2016.html).
+
+The data set has 249,011 observations for 146 variables including records of respondents' answers and calculated variables that categorized original data points into groups represented by an integer each. Data for smaller groups of respondents with specific medical conditions were not included in the data set, but summarized under other special reports such as the [Asthma Call-Back survey reports](https://www.cdc.gov/brfss/acbs/index.html) or the master [annual survey dataset](https://www.cdc.gov/brfss/annual_data/annual_2017.html).
+
+This report uses the _2016 SMART: City and County Survey Data_ which was more organized than the master survey data set. This more organized data set was chosen for initial analysis for its smaller size and greater flexibility. The next step would be to apply the codes generated in this report to the master data set for 2017.
+ 
+
+##Desired Dataset for Asthma Analysis
+
+From 146 variables available, this project selected and worked with only demographic and lifestyle factors believed to associate with asthma by scientific research.
+
+Common risks factor associated with asthma includes genetic factors, allergies, bad air quality where patients live or work, smoking, and weight status (Mayo Clinic, 2018). According to WebMD, "people with asthma have twice the risk of developing mood and anxiety disorder, including depression" (Bruce, 2009). Previous statistical research has shown that asthma is very common among young adults and adults from age 6 to 40 (NCHS, 2012). Partly because of the risk factors, asthma tends to be more common among the lower income group. Socioeconomic factors and ethnicity are strongly correlated, making income, education level and race demographic factors to be considered while exploring trends in asthma prevalence in the US population. 
+
+In short, factors relating to asthma include, but not limited to: Sex, Age, Race, BMI, Education Level, Income Group, Smoker Status, Physical Activities, and Depressive Disorders. The desired data set for this report will narrow down to these nine variables.
+
+Sub-data sets for asthmatic status will also be derived for ease of analysis.
+
+The following packages is needed for this analysis.
+
+```{r packages, message = FALSE, warning = FALSE}
+library(tidyverse)
+library(scales)
+library(viridis)
+library(cowplot)
+library(gridExtra)
+library(grid)
+```
+
+```{r data, message = FALSE, warning = FALSE, cache = TRUE}
+if(!file.exists("Data")){dir.create("Data")}
+health <- read_csv("./Data/MMSA2016.csv")
+```
+
+
+###Data Selection
+
+The following code selects the relevant columns for this project. 
+
+```{r variables}
+h16 <- health %>%
+  select(`_ASTHMS1`, `_RACE`, `_AGE_G`, `_BMI5CAT`, `_EDUCAG`, `_INCOMG`, `_RFSMOK3`, `_TOTINDA`, `_IMPSEX`, ADDEPEV2)
+
+h16
+```
+
+###Data Cleaning
+
+
+__1. Variable names__
+
+The columns are then renamed to make it easier to read.
+
+```{r colnames}
+
+names(h16) <- c("AsthmaStatus", "Race", "AgeGroup", "BMICategory", "EducationLevel", "IncomeGroup", "CurrentSmoker", "Exercise", "Sex", "DepressiveDisorder")
+
+```
+
+__2. Missing values__
+
+The original data set assigns the values "7", "77", "9" or "99" to missing values, which represent "I don't know," "I don't remember," respondents refusal to answer questions, or missing responses due to other reasons. Since it wasn't clear which missing cases the numbers above represent, they were all replaced by "NAs." Blanks received similar treatment since they occur completely at random.
+
+```{r NA_9}
+h_na <- h16 %>%
+  mutate(IncomeGroup = replace(IncomeGroup, IncomeGroup == 9, "NA"),
+         EducationLevel = replace(EducationLevel, EducationLevel == 9, "NA"),
+         Race = replace(Race, Race == 9, "NA"),
+         AgeGroup = replace(AgeGroup, AgeGroup == 9, "NA"),
+         AsthmaStatus = replace(AsthmaStatus, AsthmaStatus == 9, "NA"),
+         Exercise = replace(Exercise, Exercise == 9, "NA"),
+         CurrentSmoker = replace(CurrentSmoker , CurrentSmoker == 9, "NA"),
+         DepressiveDisorder = replace(DepressiveDisorder, DepressiveDisorder == 7 | DepressiveDisorder == 9 | DepressiveDisorder == " ", "NA"))
+```
+
+
+__3. Data coding__
+
+_3.1 Binary variables_
+
+The following codes reassign dummy values to binary variables. Binary variables in this data set were represented by number 1 or 2. For consistency, they were standardized to number 0 and 1. This change also made it easier to run regression models later.
+
+```{r binfix}
+hbinfix <- h_na %>%
+  mutate(Sex = as.numeric(Sex == ifelse(Sex == 2, 0, 1)),
+         DepressiveDisorder = as.numeric(DepressiveDisorder == ifelse(DepressiveDisorder == 2, 0, 1)),
+         Exercise = as.numeric(Exercise == ifelse(Exercise == 2, 0, 1)),
+         CurrentSmoker = as.numeric(CurrentSmoker == ifelse(CurrentSmoker == 2, 1, 1)))
+  
+```
+
+Notes:
+
+* For Sex: 0 represents Female, 1 represents Male, 
+* For Depressive Disorders: 1 = Respondent has a depressive disorder, 0 = Respondent doesn't report having a depressive disorder, 
+* For Exercise: 1 = Respondent reported having physical activities in the last 30 days, 0 = Respondent reported not having physical activities in the last 30 days,
+* For Current Smoker: 1 = Respondent reported having smoked in the last week, 0 = Respondent reported not having smoked in the last week.
+
+
+_3.2 Non-binary variables_
+
+Similar to binary variables, other categorical variables were also put into groups represented by integers. The following codes return the original meanings to the integer representations. The new variable names were modified from the questionnaire used to collect data for this data set.
+
+
+```{r nonbinfix}
+
+hfix <- hbinfix %>%
+  mutate(BMICategory = replace(BMICategory, BMICategory == 1, "Underweight"),
+         BMICategory = replace(BMICategory, BMICategory == 2, "Normal"),
+         BMICategory = replace(BMICategory, BMICategory == 3, "Overweight"),
+         BMICategory = replace(BMICategory, BMICategory == 4, "Obese")) %>%
+  mutate(Race = replace(Race, Race == 1, "White"),
+         Race = replace(Race, Race == 2, "Black"),
+         Race = replace(Race, Race == 3, "American Indian/Alaskan Native"),
+         Race = replace(Race, Race == 4, "Asian"),
+         Race = replace(Race, Race == 5, "Native Hawaiian/other Pacific Islander"),
+         Race = replace(Race, Race == 6, "Others"),
+         Race = replace(Race, Race == 7, "Multiracial, non-Hispanic"),
+         Race = replace(Race, Race == 8, "Hispanic")) %>%
+  mutate(EducationLevel = replace(EducationLevel, EducationLevel == 1, "Did not Attend High School"),
+         EducationLevel = replace(EducationLevel, EducationLevel == 2, "Graduated High School"),
+         EducationLevel = replace(EducationLevel, EducationLevel == 3, "Attended College/Technical School"),
+         EducationLevel = replace(EducationLevel, EducationLevel == 4, "Graduated from College/Technical School")) %>%
+  mutate(AgeGroup = replace(AgeGroup, AgeGroup == 1, "18 to 24"),
+         AgeGroup = replace(AgeGroup, AgeGroup == 2, "25 to 34"),
+         AgeGroup = replace(AgeGroup, AgeGroup == 3, "35 to 44"),
+         AgeGroup = replace(AgeGroup, AgeGroup == 4, "45 to 54"),
+         AgeGroup = replace(AgeGroup, AgeGroup == 5, "55 to 64"),
+         AgeGroup = replace(AgeGroup, AgeGroup == 6, "65 and above")) %>%
+  mutate(IncomeGroup = replace(IncomeGroup, IncomeGroup == 1, "$14,999 or less"),
+         IncomeGroup = replace(IncomeGroup, IncomeGroup == 2, "$15,000 to $24,999"),
+         IncomeGroup = replace(IncomeGroup, IncomeGroup == 3, "$25,000 to $34,999"),
+         IncomeGroup = replace(IncomeGroup, IncomeGroup == 4, "$35,000 to $49,999"),
+         IncomeGroup = replace(IncomeGroup, IncomeGroup == 5, "More than $49,999")) %>%
+  mutate(AsthmaStatus = replace(AsthmaStatus, AsthmaStatus == 1, "Current"),
+         AsthmaStatus = replace(AsthmaStatus, AsthmaStatus == 2, "Former"),
+         AsthmaStatus = replace(AsthmaStatus, AsthmaStatus == 3, "Never"))
+
+```
+
+
+```{r State, eval = FALSE, include = FALSE}
+hfixs <- hfix %>%
+  separate(State, into = c("Area", "State", "MMSA"), sep = ",") %>%
+  select(-MMSA)
+```
+
+
+__4. Finalized dataset__
+
+The codes below arrange the columns in the data set into the desired order and split the data set into smaller ones.
+
+```{r finalData}
+health2016 <- hfix %>% 
+  select(AsthmaStatus, AgeGroup, Sex, Race, IncomeGroup, EducationLevel, BMICategory, CurrentSmoker, Exercise, DepressiveDisorder)
+
+health2016
+
+#remove missing values for AsthmaStatus only
+health2016_narm <- health2016 %>%
+  filter(AsthmaStatus != "NA")
+
+#Data for all respondents who reported formerlly or currently having asthma 
+asthma2016 <- health2016 %>%
+  filter(AsthmaStatus == "Current" | AsthmaStatus == "Former")
+
+#Data for all respondents who reported currently having asthma
+curr_ast_16 <- asthma2016 %>%
+  filter(AsthmaStatus == "Current")
+
+curr_ast_16
+
+#Data for all respondents who reported formerlly having asthma
+form_ast_16 <- asthma2016 %>%
+  filter(AsthmaStatus == "Former")
+
+form_ast_16
+```
+
+
+#Descriptive Analytics
+
+
+##General Description
+
+
+```{r asthmasummary, fig.height = 2, fig.width = 6}
+DF1_Summary_By_Asthma_Status <- health2016 %>% 
+  group_by(AsthmaStatus) %>%
+  summarise(Count = n(), Percentage_of_Population = round(n()/249011*100, 2)) %>%
+  arrange(desc(Count))
+
+DF1_Summary_By_Asthma_Status
+```
+
+
+According to the data collect in 2016, about 13% of respondents reported currently or formerly having asthma, and about 86% reported never having asthma. Since the proportion of respondents with asthma was relatively small, it's likely that the distribution and characteristics would be affected by those of the whole data set population. Therefore, it would be more informative to look at the data in terms of proportion and conditional probability:
+
+$P(Asthma \mid Variable) = \frac{P(Asthma \cap Variable)} {P(Variable)}$
+
+The following codes were generated to describe distribution of respondents in this data set by the selected variables, which is also the probability of a variable. The tibbles were stored but were not called as tibbles, but will be presented using ggplot later on. 
+
+```{r summary}
+#I realized this can also be done using the gather function after we learned that in class
+AgeProp <- health2016_narm %>%
+  group_by(AgeGroup) %>%
+  summarise(AgePopPercent = n()/249011*100)
+
+SexProp <- health2016_narm %>%
+  mutate(Sex = replace(Sex, Sex == 0, "Female"),
+         Sex = replace(Sex, Sex == 1, "Male")) %>%
+  group_by(Sex) %>%
+  summarise(SexPopPercent = n()/249011*100)
+
+RaceProp <- health2016_narm %>%
+  group_by(Race) %>%
+  summarise(RacePopPercent = n()/249011*100) 
+
+IncomeProp <- health2016_narm %>%
+  group_by(IncomeGroup) %>%
+  summarise(IncomePopPercent = n()/249011*100) 
+  
+EduProp <- health2016_narm %>%
+  group_by(EducationLevel) %>%
+  summarise(EduPopPercent = n()/249011*100) 
+  
+SmokeProp <- health2016_narm %>%
+  mutate(CurrentSmoker = replace(CurrentSmoker, CurrentSmoker == 0, "Yes"),
+         CurrentSmoker = replace(CurrentSmoker, CurrentSmoker == 1, "No")) %>%
+  group_by(CurrentSmoker) %>%
+  summarise(SmokerPopPercent = n()/249011*100) 
+  
+BMIProp <- health2016_narm %>%
+  group_by(BMICategory) %>%
+  summarise(BMIPopPercent = n()/249011*100) 
+  
+ExProp <- health2016_narm %>%
+  mutate(Exercise = replace(Exercise, Exercise == 0, "No"),
+         Exercise = replace(Exercise, Exercise == 1, "Yes")) %>%
+  group_by(Exercise) %>%
+  summarise(ExPopPercent = n()/249011*100) 
+
+DepProp <- health2016_narm %>%
+  mutate(DepressiveDisorder = replace(DepressiveDisorder, DepressiveDisorder == 0, "No"),
+         DepressiveDisorder = replace(DepressiveDisorder, DepressiveDisorder == 1, "Yes")) %>%
+  group_by(DepressiveDisorder) %>%
+  summarise(DepPopPercent = n()/249011*100) 
+```
+
+
+##Asthma Status vs. Age Groups
+
+```{r age, fig.width = 10, fig.height = 4}
+AsAPlot <- asthma2016 %>%
+  ggplot(aes(x = AgeGroup)) +
+  geom_bar() +
+  coord_flip() +
+  theme(axis.title.x = element_blank())+
+  ggtitle("Having Asthma")
+
+TotAPlot <- health2016_narm %>%
+  ggplot(aes(x = AgeGroup)) +
+  geom_bar(fill = "dark grey") +
+  coord_flip() +
+  theme(axis.title = element_blank(),
+        axis.text.y = element_blank()) +
+  ggtitle("All Respondents")
+
+Distributions_By_Age_groups <- plot_grid(AsAPlot, TotAPlot)
+
+Asthma_Status_By_Age_Groups <- asthma2016 %>%
+  ggplot() +
+  geom_bar(aes(x = AgeGroup, fill = AsthmaStatus)) +
+  facet_grid(~AsthmaStatus,  scale = "free") +
+  coord_flip() +
+  scale_fill_brewer(palette = "Paired") +
+  guides(fill = FALSE)+
+  ggtitle("Asthma Status By Age Groups")
+
+A_asthma <- asthma2016 %>%
+  group_by(AgeGroup) %>%
+  summarise(AgeAsthmaPercent = n()/249011*100)
+
+A <- cbind(AgeProp, A_asthma[,2])
+
+DF2_Asthma_Proportion_By_Age_groups <- A %>% 
+  mutate(PercentOfAgeGroup = round(AgeAsthmaPercent/AgePopPercent*100, 2)) %>%
+  select(AgeGroup, PercentOfAgeGroup) %>%
+  arrange(desc(PercentOfAgeGroup))
+
+Distributions_By_Age_groups
+
+Asthma_Status_By_Age_Groups
+
+DF2_Asthma_Proportion_By_Age_groups
+```
+
+From the data frame and the two grey graphs, most respondents were 65 years old or above, but the proportion of them having asthma was the lowest compared to other age groups (at 11.5%). In contrast, respondents aged 18 to 24 were the least represented in this data set, but the proportion of them reported having asthma was the highest (at 16.7%). 
+
+By asthma status, the proportion of respondents reported currently having asthma was similar to the overall proportion of respondents reported currently or formerly having asthma. In other words, the light blue graph and the darker grey graph look similar. The proportion formerly having asthma, on the other hand, shows some obvious differences: there were significantly more respondents in the age groups 18 to 24, 25 to 34, and 35 to 44. More respondents age 25 to 34 reported formerly having asthma than those from the 18 to 24, 35 to 44 and 45 to 54 age groups, which did not follow the distributions in the two grey graphs. This result is consistent with literature findings.
+
+##Asthma Status vs. Sex
+
+```{r sex, fig.width = 8, fig.height = 3}
+sex1 <- asthma2016 %>%
+  mutate(Sex = replace(Sex, Sex == 0, "Female"),
+         Sex = replace(Sex, Sex == 1, "Male"))
+
+sex2 <- health2016_narm %>%
+  mutate(Sex = replace(Sex, Sex == 0, "Female"),
+         Sex = replace(Sex, Sex == 1, "Male"))
+
+TotSplot <- sex2 %>% 
+  ggplot(aes(x = Sex, fill = Sex)) + 
+  geom_bar() + 
+  guides(fill = F) + 
+  scale_fill_brewer(palette = "Accent") +
+  theme(axis.title.y = element_blank()) +
+  ggtitle("All Respondents By Sex")
+
+StatusS <- sex1 %>%
+  ggplot(aes(x = AsthmaStatus, fill = Sex)) + 
+  geom_bar(position = "dodge", color = "white") + 
+  theme(axis.title.y = element_blank()) + 
+  scale_fill_brewer(palette = "Accent") +
+  guides(fill = FALSE) +
+  ggtitle("Asthma Status By Sex")
+
+Graphs_Of_Asthma_By_Sex <- plot_grid(TotSplot, StatusS)
+
+S_asthma <- asthma2016 %>%
+  mutate(Sex = replace(Sex, Sex == 0, "Female"),
+         Sex = replace(Sex, Sex == 1, "Male")) %>%
+  group_by(Sex) %>%
+  summarise(SexAsthmaPercent = n()/249011*100)
+
+S <- cbind(SexProp, S_asthma[,2])
+
+DF3_Asthma_Proportion_By_Sex <- S %>% 
+  mutate(PercentOfSexGroup = round(SexAsthmaPercent/SexPopPercent*100, 2)) %>%
+  select(Sex, PercentOfSexGroup)
+
+Graphs_Of_Asthma_By_Sex
+
+DF3_Asthma_Proportion_By_Sex
+```
+
+There were more female respondents than male respondents in this data set. The percentage of female respondents reported currently or formerly having asthma was about 1.5 times higher than that of male respondents. From the graph on the right, this drastic difference came from the proportion of female respondents currently having asthma being more than twice that of male respondents. This result is consistent with previous trends.
+
+##Asthma Status vs. Race
+
+```{r race, fig.width = 7, fig.height = 3}
+Graphs_Of_Asthma_Status_By_Race <- asthma2016 %>%
+  ggplot(aes(x = "", fill = Race)) +
+  geom_bar(position = "dodge") +
+  facet_grid(.~AsthmaStatus, scale = "free") +
+  scale_fill_brewer(palette = "RdGy") +
+  guides(fill = FALSE) +
+  theme(axis.title.x = element_blank())
+  
+All_Respondents_Distribution_By_Race <- health2016_narm %>%
+  ggplot(aes(x = "", fill = Race)) +
+  geom_bar(position = "dodge") +
+  scale_fill_brewer(palette = "RdGy") +
+  theme(legend.direction = "vertical",
+        axis.title.x = element_blank())
+
+
+R_asthma <- asthma2016 %>%
+  group_by(Race) %>%
+  summarise(RaceAsthmaPercent = n()/249011*100)
+
+R <- cbind(RaceProp, R_asthma[,2])
+
+DF4_Asthma_Proportion_By_Race <- R %>% 
+  mutate(PercentOfRaceGroup = RaceAsthmaPercent/RacePopPercent*100) %>%
+  select(Race, PercentOfRaceGroup) %>%
+  arrange(desc(PercentOfRaceGroup))
+
+Graphs_Of_Asthma_Status_By_Race
+
+All_Respondents_Distribution_By_Race
+
+DF4_Asthma_Proportion_By_Race
+```
+
+The vast majority of surveyees were White, yet the proportion of white respondents having asthma was relatively low. The proportions of Multiracial and American Indian/Alaskan Native respondents having asthma were significantly higher than those of other races. The number of Black respondents currently having asthma was higher than that of Hispanic respondents, but slightly fewer Black respondents reported formerly having asthma than Hispanic respondents. This explains how Black ranked third in the data frame, while Hispanic ranked fifth. This trend is similar to previous years'. 
+
+##Asthma Status vs. Income Level
+
+```{r Income, fig.width = 7, fig.height = 3}
+All_Respondents_Distribution_By_Income_Groups <- health2016_narm %>% ggplot() +
+  geom_bar(aes(x = 1, fill = IncomeGroup), color = "black") +
+  coord_polar(theta = "y") +
+  scale_fill_ordinal () +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.line = element_blank()) +
+  ggtitle("All respondents")
+
+CIAsPlot <- curr_ast_16 %>% ggplot() +
+  geom_bar(aes(x = 1, fill = IncomeGroup), color = "black") +
+  coord_polar(theta = "y") +
+  scale_fill_ordinal () +
+  guides (fill = FALSE) +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.line = element_blank()) +
+  ggtitle("Currently having Asthma")
+
+FIAsPlot <- form_ast_16 %>% ggplot() +
+  geom_bar(aes(x = 1, fill = IncomeGroup), color = "black") +
+  coord_polar(theta = "y") +
+  scale_fill_ordinal () +
+  guides (fill = FALSE) +
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.line = element_blank())  +
+  ggtitle("Formerly having Asthma")
+
+Asthma_Status_By_Income_Group <- plot_grid(CIAsPlot, FIAsPlot, labels = "AUTO")
+
+  
+I_asthma <- asthma2016 %>%
+  group_by(IncomeGroup) %>%
+  summarise(IncomeAsthmaPercent = n()/249011*100)
+
+I <- cbind(IncomeProp, I_asthma[,2])
+
+DF5_Asthma_Proportion_By_Income_Group <- I %>% 
+  mutate(PercentOfIncomeGroup = round(IncomeAsthmaPercent/IncomePopPercent*100, 2)) %>%
+  select(IncomeGroup, PercentOfIncomeGroup) %>%
+  arrange(desc(PercentOfIncomeGroup))
+
+Asthma_Status_By_Income_Group
+
+All_Respondents_Distribution_By_Income_Groups
+
+DF5_Asthma_Proportion_By_Income_Group
+
+```
+
+The AllRespondents pie chart shows that the majority of respondents earned 50,000 USD or above per year, as represented by the yellow portion taking up a larger portion of the pie than the total of the other income groups (not considering the "NA" group). However, for the two pie charts considering asthma status, the yellow portions are smaller while the portions representing lower income respondents are bigger. The data frame gives a clearer picture of this observation, showing an inverse relationship between income and the likelihood of respondents reporting currently or formerly having asthma. Respondents in the lowest income group were almost twice more likely to report currently or formerly having asthma than those in the highest income group.
+
+##Asthma Status vs. Education Level
+
+```{r Edu, fig.width = 7, fig.height = 3}
+TotEPlot <- health2016_narm %>% ggplot() +
+  geom_bar(aes(x = 1, fill = EducationLevel), color = "light gray") +
+  coord_polar(theta = "y") +
+  scale_fill_brewer (palette = "Set3") + 
+  xlim(0, 1.5) +
+  geom_text(aes(x = 0, y = 1, label = "All"))+
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.line = element_blank()) 
+
+
+CEAsPlot <- curr_ast_16 %>% ggplot() +
+  geom_bar(aes(x = 1, fill = EducationLevel), color = "light gray") +
+  coord_polar(theta = "y") +
+  scale_fill_brewer (palette = "Set3") +
+  guides (fill = FALSE) +
+  xlim(0, 1.5) +
+  geom_text(aes(x = 0, y = 1, label = "Current"))+
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.line = element_blank()) +
+  ggtitle("Currently having asthma")
+
+FEAsPlot <- form_ast_16 %>% ggplot() +
+  geom_bar(aes(x = 1, fill = EducationLevel), color = "light gray") +
+  coord_polar(theta = "y") +
+  scale_fill_brewer (palette = "Set3") +
+  guides (fill = FALSE) + 
+  xlim(0, 1.5) +
+  geom_text(aes(x = 0, y = 1, label = "Former"))+
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.line = element_blank()) +
+  ggtitle("Formerly having asthma")
+
+Graphs_Of_Asthma_Status_By_Education_Level <- plot_grid(CEAsPlot, FEAsPlot, labels = "AUTO")
+
+E_asthma <- asthma2016 %>%
+  group_by(EducationLevel) %>%
+  summarise(EduAsthmaPercent = n()/249011*100)
+
+E <- cbind(EduProp, E_asthma[,2])
+
+DF6_Asthma_Proportion_By_Education_Level <- E %>% 
+  mutate(PercentOfEduLevel = EduAsthmaPercent/EduPopPercent*100) %>%
+  select(EducationLevel, PercentOfEduLevel) %>%
+  arrange(desc(PercentOfEduLevel))
+
+Graphs_Of_Asthma_Status_By_Education_Level
+
+grid.arrange(TotEPlot, bottom = "Distribution of Education Level")
+
+DF6_Asthma_Proportion_By_Education_Level
+```
+
+The donut charts show that the proportion of respondents who did not attend high school or attended college/technical school reported currently having asthma was higher. More respondents who attended college/technical school reported currently having asthma than formerly having asthma. A smaller proportion of respondents who graduated from college/technical school reported having asthma at all. The data frame confirms these observations, as 16.7% of respondents who did not attend high school, followed by 14.1% of respondents who attended college/technical school reported currently or formerly having asthma; only 12.1% of respondents who graduated from college/technical school reported having asthma at all. The relationship between education levels and asthma status needs further investigation.
+
+##Asthma Status vs. Smoker Status
+
+```{r smoke, fig.width = 8, fig.height = 3}
+sm1 <- asthma2016 %>%
+  mutate(CurrentSmoker = replace(CurrentSmoker, CurrentSmoker == 0, "Yes"),
+         CurrentSmoker = replace(CurrentSmoker, CurrentSmoker == 1, "No"))
+
+sm2 <- health2016_narm %>%
+  mutate(CurrentSmoker = replace(CurrentSmoker, CurrentSmoker == 0, "Yes"),
+         CurrentSmoker = replace(CurrentSmoker, CurrentSmoker == 1, "No"))
+
+TotSmplot <- sm2 %>% 
+  ggplot(aes(x = CurrentSmoker, fill = CurrentSmoker)) + 
+  geom_bar() + 
+  guides(fill = F) + 
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank()) +
+  ggtitle("All Respondents Smoker Status")
+
+StatusSm <- sm1 %>%
+  ggplot(aes(x = AsthmaStatus, fill = CurrentSmoker)) + 
+  geom_bar(position = "dodge") + 
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank()) +
+  guides (fill = F) +
+  ggtitle("Asthma by Smoker Status")
+
+Distributions_By_Smoker_Status <- plot_grid(TotSmplot, StatusSm)
+
+Sm_asthma <- asthma2016 %>%
+  mutate(CurrentSmoker = replace(CurrentSmoker, CurrentSmoker == 0, "Yes"),
+         CurrentSmoker = replace(CurrentSmoker, CurrentSmoker == 1, "No")) %>%
+  group_by(CurrentSmoker) %>%
+  summarise(SmokerAsthmaPercent = n()/249011*100)
+
+Sm <- cbind(SmokeProp, Sm_asthma[,2])
+
+DF7_Asthma_Proportion_By_Smoker_Status <- Sm %>% 
+  mutate(PercentOfSmokerGroup = SmokerAsthmaPercent/SmokerPopPercent*100) %>%
+  select(CurrentSmoker, PercentOfSmokerGroup)
+
+Distributions_By_Smoker_Status
+
+DF7_Asthma_Proportion_By_Smoker_Status
+
+```
+
+The vast majority of respondents in this data set were not current smokers (most of them did not report smoking a cigarette 100 days before the survey day). The proportion of smokers who also reported currently having asthma seem to be higher than that of non smokers, as shown by the higher blue bar under the "Current" group in the "Asthma by Smoker Status" graph. The data frame agrees with this observation, showing the percent of smokers who reported having asthma to be 1.5 times that of non-smokers. This observation agrees to that of previous studies (Mayo Clinic, 2018).
+
+##Asthma Status vs. Physical Activities
+
+```{r exercise, fig.width = 8, fig.height = 3}
+ex1 <- asthma2016 %>%
+  mutate(Exercise = replace(Exercise, Exercise == 0, "No"),
+         Exercise = replace(Exercise, Exercise == 1, "Yes"))
+
+ex2 <- health2016_narm %>%
+  mutate(Exercise = replace(Exercise, Exercise == 0, "No"),
+         Exercise = replace(Exercise, Exercise == 1, "Yes"))
+
+TotExplot <- ex2 %>% 
+  ggplot(aes(x = Exercise, fill = Exercise)) + 
+  geom_bar(color = "light grey") + 
+  guides(fill = F) + 
+  scale_fill_brewer(palette = "Set1") +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank()) +
+  ggtitle("All Respondents Physical Activities")
+
+StatusEx <- ex1 %>%
+  ggplot(aes(x = AsthmaStatus, fill = Exercise)) + 
+  geom_bar(position = "dodge", color = "light grey") + 
+  scale_fill_brewer(palette = "Set1") +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank()) +
+  guides (fill = F) +
+  ggtitle("Asthma by Physical Activities")
+
+Distributions_By_Physical_Activities <- plot_grid(TotExplot, StatusEx)
+
+Ex_asthma <- asthma2016 %>%
+  mutate(Exercise = replace(Exercise, Exercise == 0, "No"),
+         Exercise = replace(Exercise, Exercise == 1, "Yes")) %>%
+  group_by(Exercise) %>%
+  summarise(ExAsthmaPercent = n()/249011*100)
+
+Ex <- cbind(ExProp, Ex_asthma[,2])
+
+DF8_Asthma_Proportion_By_Physical_Activities <- Ex %>% 
+  mutate(PercentOfExercise = ExAsthmaPercent/ExPopPercent*100) %>%
+  select(Exercise, PercentOfExercise)
+
+Distributions_By_Physical_Activities
+
+DF8_Asthma_Proportion_By_Physical_Activities
+
+```
+
+The majority of respondents reported taking part in physical activities in the month before the interview day. However, a third of respondents who reported currently having asthma did not engage in any physical activities 30 days before the survey day. The data frame also support this observation, as the proportion of respondents who reported ever having asthma and did not exercise was slightly higher than those who did exercise. This is likely because it is physically more challenging and even not medically beneficial for asthmatic patients to engage in the same level of physical activities as non-asthmatic people, or even any physical activities at all.  
+
+##Asthma Status vs. Depressive Disorders
+
+```{r Depression, fig.width = 8, fig.height = 3}
+d1 <- asthma2016 %>%
+  mutate(DepressiveDisorder = replace(DepressiveDisorder, DepressiveDisorder == 0, "No"),
+         DepressiveDisorder = replace(DepressiveDisorder, DepressiveDisorder == 1, "Yes"))
+
+d2 <- health2016_narm %>%
+  mutate(DepressiveDisorder = replace(DepressiveDisorder, DepressiveDisorder == 0, "No"),
+         DepressiveDisorder = replace(DepressiveDisorder, DepressiveDisorder == 1, "Yes"))
+
+TotDPlot <- d2 %>% 
+  ggplot(aes(x = DepressiveDisorder, fill = DepressiveDisorder)) + 
+  geom_bar(color = "brown") + 
+  guides(fill = F) + 
+  scale_fill_brewer(palette = "Spectral") +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank()) +
+  ggtitle("All Respondents Depressive Disorder")
+
+StatusD <- d1 %>%
+  ggplot(aes(x = AsthmaStatus, fill = DepressiveDisorder)) + 
+  geom_bar(color = "brown", position = "dodge") + 
+  scale_fill_brewer(palette = "Spectral") +
+  theme(axis.title.y = element_blank(),
+        axis.title.x = element_blank()) +
+  guides (fill = F) +
+  ggtitle("Asthma by Depressive Disorder")
+
+Distributions_By_Depressive_Disorders <- plot_grid(TotDPlot, StatusD)
+
+D_asthma <- asthma2016 %>%
+  mutate(DepressiveDisorder = replace(DepressiveDisorder, DepressiveDisorder == 0, "No"),
+         DepressiveDisorder = replace(DepressiveDisorder, DepressiveDisorder == 1, "Yes")) %>%
+  group_by(DepressiveDisorder) %>%
+  summarise(DepAsthmaPercent = n()/249011*100)
+
+D <- cbind(DepProp, D_asthma[,2])
+
+DF9_Asthma_Proportion_By_Depression_Disorders <- D %>% 
+  mutate(PercentOfDepressiveDisorder = DepAsthmaPercent/DepPopPercent*100) %>%
+  select(DepressiveDisorder, PercentOfDepressiveDisorder)
+
+Distributions_By_Depressive_Disorders
+
+DF9_Asthma_Proportion_By_Depression_Disorders
+```
+
+According to research studies summarized in WebMD, people who are diagnosed with asthma have a higher chance of having depressive disorders (Bruce, 2009). The data set supports this research results. Less than one fifth of all respondents in this data set reported having any depressive disorders; but among those who reported currently having asthma, more than a third reported also having some kinds of depressive disorders; and for those who reported formerly having asthma, the proportion was about one fourth. The data frame also aligned with this observation: about 23% of respondents who reported having depressive disorders also reported currently or formerly having asthma; only 11% of respondents who did not report having depressive disorders also reported having asthma.
+
+##Asthma Status vs. BMI Categories
+
+```{r BMI, fig.width = 7, fig.height = 3}
+TotWPlot <- health2016_narm %>% ggplot() +
+  geom_bar(aes(x = 1, fill = BMICategory), color = "dark green") +
+  coord_polar(theta = "y") +
+  scale_fill_brewer (palette = "Paired") + 
+  xlim(0, 1.5) +
+  geom_text(aes(x = 0, y = 1, label = "All"))+
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.line = element_blank()) 
+
+
+CWAsPlot <- curr_ast_16 %>% ggplot() +
+  geom_bar(aes(x = 1, fill = BMICategory), color = "dark green") +
+  coord_polar(theta = "y") +
+  scale_fill_brewer (palette = "Paired") +
+  guides (fill = FALSE) +
+  xlim(0, 1.5) +
+  geom_text(aes(x = 0, y = 1, label = "Current"))+
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.line = element_blank()) 
+
+FWAsPlot <- form_ast_16 %>% ggplot() +
+  geom_bar(aes(x = 1, fill = BMICategory), color = "dark green") +
+  coord_polar(theta = "y") +
+  scale_fill_brewer (palette = "Paired") +
+  guides (fill = FALSE) + 
+  xlim(0, 1.5) +
+  geom_text(aes(x = 0, y = 1, label = "Former"))+
+  theme(axis.title = element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank(),
+        axis.line = element_blank())
+
+Graphs_Of_Asthma_Status_By_BMI_Categories <- plot_grid(CWAsPlot, FWAsPlot)
+
+W_asthma <- asthma2016 %>%
+  group_by(BMICategory) %>%
+  summarise(BMIAsthmaPercent = n()/249011*100)
+
+W <- cbind(BMIProp, W_asthma[,2])
+
+DF10_Asthma_Proportion_By_BMI_Categories <- W %>% 
+  mutate(PercentOfBMICategories = BMIAsthmaPercent/BMIPopPercent*100) %>%
+  select(BMICategory, PercentOfBMICategories) %>%
+  arrange(desc(PercentOfBMICategories))
+
+Graphs_Of_Asthma_Status_By_BMI_Categories
+
+grid.arrange(TotWPlot, bottom = "Distribution of BMI Category")
+
+DF10_Asthma_Proportion_By_BMI_Categories
+```
+
+From the donut charts, the BMI distribution of respondents who reported formerly having asthma was similar to that of all respondents, but more respondents who reported currently having asthma were also obese. The data frame agrees to this observation: while about 10% of respondents in the normal and overweight groups reported having asthma currently or formerly, the proportion was 17% for the obese group. 13% of underweight respondents reported having asthma either currently or formerly, more than those of the normal and overweight groups. This observation is supported by other studies (Mayo Clinic, 2018).
+
+```{r Map, eval=FALSE, include = FALSE, fig.height = 20, fig.width=8}
+CurrAsthmaState <- curr_ast_16 %>%
+  group_by(State) %>%
+  summarise(CurrAsthmaCount = n())
+
+FormAsthmaState <- form_ast_16 %>%
+  group_by(State) %>%
+  summarise(FormAsthmaCount = n())
+
+AsthmaState <- cbind(CurrAsthmaState, FormAsthmaState[,2])
+
+AsthmaState <- AsthmaState %>%
+  mutate(AllAsthma = CurrAsthmaCount + FormAsthmaCount)
+
+AsthmaState
+
+GraphState <- ggplot(asthma2016, aes(x = State, fill = AsthmaStatus)) +
+  geom_bar(position = "dodge") +
+  coord_flip() 
+
+GraphState
+
+#plot_usmap (data = as.data.frame(AsthmaState), values = "AllAsthma") +
+#  scale_fill_continuous(name = "Asthma 2016", low = "light red", high = "dark red", label = comma) +
+#  theme(legend.position = "right")
+```
+
+
+
+
+#Discussion
+
+##Comparisons with Literature Research
+
+The relationships between asthma status and lifestyle or behavioral risk factors found in this reports seem to be similar to those found by previous studies: that is there is a relationship between having asthma and being obese, smoking, less intensely or frequently engaging in physical activities and having depressive disorders. The demographic distributions of people reported currently having asthma are also relatively consistent with previous years' reports. There doesn't appear to be a surprising change in the distribution and trends of asthma prevalence among Americans. 
+
+##Potentials for further research
+
+###Descriptive Analytics
+
+__Currently vs. Formerly Having Asthma__
+
+It would be interesting to look at factors relating to the differences across variables between the distributions of respondents reported currently having asthma, versus those who reported formerly having asthma. The CDC conducts an Asthma Call-Back survey annually, that contains more details on asthma status, factors affecting asthma status and how asthma interferes with patients' daily activities. Information from the Asthma Call-Back Survey is reported in the master annual data set, but is not yet standardized. The latest results available were from 2015 so they could not be used for this report. 
+
+__Asthma and Children__
+
+Asthma is more prevalence among children from age 0 to 17 than among adults. The data set analyzed in this project did not include information about children with asthma. Future research should dive into more current demographic characteristics of children with asthma and their families. 
+
+__Asthma Trends Over Time__
+
+Demographic and socioeconomic characteristics of asthmatic Americans change over time, as shown in previous research (NCHS, 2012). These trends have been described and reported until 2015. Understanding recent trends would be useful for the public, medical institutions and pharmaceutical companies. 
+
+__Air Quality and Sleep Quality__
+
+Two factors relating the percentage of people having asthma that were not included in this report are weather and sleep quality. 
+
+For sleep quality, the data set used for this report only contains the number of hours respondents believed they usually slept during the night, which was highly subjective and inaccurate. More detailed information on sleep quality and treatments current asthmatic patients received can be found in the Asthma Call-Back survey. Unfortunately, again, these data sets are not up to date yet.
+
+The data set used in this report categorized respondents by metropolitan statistical areas, which is not friendly to any R mapping package. There are larger data sets available on the CDC website that contain the states respondents came from. This data set can be used with the usmap package to obtain maps showing the density of asthmatic patients across the states. If this result can be compared with weather and air quality data, a more profound understanding of how certain external environmental factors relate to the number of Americans currently or formerly having asthma.
+
+###Predictive Analytics
+
+Regression models, logistic regression models, multivariate regression technics, association rules, classifications or other decision methods can be used to predict if a person currently or formerly has asthma, or if the population in certain areas are more prone to asthma. This helps the healthcare system to better prepare for asthma cases that would require special support or hospitalization. The predictions can also support pharmaceutical companies in product development and promotion campaigns for asthma support medications or devices. 
+
+#References
+
+1. Bruce, D. F. (2009). __Asthma and Depression__. _WedMD_ (2009). Retrieved from https://www.webmd.com/asthma/features/asthma-depression in 12/1/2018
+
+2. Mayo Clinic. (2018). __Asthma__. _Mayo Clinic_ (2018). Retrieved from  https://www.mayoclinic.org/diseases-conditions/asthma/symptoms-causes/syc-20369653 in 12/1/2018
+
+3. National Center for Health Statistics (2012). __Trends in Asthma Prevalence, Health Care Use, and Mortality in the United States, 2001 - 2010.__ _Centers for Disease Control and Prevention_ (2012) Retrieved from  https://www.cdc.gov/nchs/data/databriefs/db94.htm in 12/1/2018
