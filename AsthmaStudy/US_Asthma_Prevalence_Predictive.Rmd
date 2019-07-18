@@ -1,79 +1,73 @@
 ---
-title: "U.S. Asthma Prevalence Study"
+title: "U.S. Asthma Prevalence 2017 - Exploratory Analysis and Predictive Modeling"
 author: "Anh Do"
-date: "May 22, 2019"
-output: 
-  pdf_document:
-    toc: yes
-    toc_depth: '3'
+date: "April 17, 2019"
+output:
+  word_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
-#Executive Summary
-
-#Introduction
-
-##Analytics Questions
+##Introduction
 
 In this study, the following questions would be answered using the 2017 data from The Behavioral Risk Factor Surveillance System (BRFSS):
 
 *1. Which state in the U.S. had the highest probability of finding a person suffering from asthma in 2017? Which state had the lowest possibility?*
 
-*2. Are the demographic characteristics and health risks factors related to asthma patients found in literature supported by this dataset?*
+*2. At what age was asthma most commonly diagnosed for the selected respondents? Which medical care(s) did they need and how often did they need it (them)?*
 
-*3. At what age was asthma most commonly diagnosed for the selected respondents? Which medical care(s) did they need and how often did they need it (them)?*
+*3. Could the likelihood of having asthma be predicted using logistic regression model using the associated demographic and health risk factors found in literature? If yes, how accurate were these predictions?* 
 
-*4. Could the likelihood of having asthma be predicted using logistic regression model using the associated demographic and health risk factors found in literature? If yes, how accurate were these predictions?* 
+The descriptive analytics goals of this study were to explore the geographic distribution of asthma in the U.S. by state, and to visualize the behaviors of those who reported having asthma. The predictive analytics goal of this study was to test how accurately a binary logistic regression model could predict the likelihood a respondent having a specific set of characteristics would have asthma. This was a classification predictive problem.
 
-## Analytics Goals
-
-###Descriptive Analytics Goals
-
-The descriptive analytics goals of this study were to:
-
-* explore the geographic distribution of asthmatics in the U.S. by state,
-
-* verify the demographic characteristics and health risk factors related to people with asthma found in literature
-
-* visualize the behaviors of those who reported having asthma. 
-
-###Predictive Analytics Goals
-
-The predictive analytics goal of this study was to test how accurately a binary logistic regression model could predict the likelihood a respondent having a specific set of characteristics would have asthma. This was a classification predictive problem.
-
-##Importance of this study
+###Importance of this study
 
 As mentioned in previous study, asthma is a very common chronic respiratory disease where a person's airways to the lung are inflamed, narrowed, swollen, and often produce extra thickened mucus which make breathing difficult (Mayo Clinic, 2018). Millions of Americans are affected by asthma every year. Asthma may not pose a major problem to some people, but for others, it can gravely interfere with daily activities. An asthma-attack can be life-threatening. Understanding the medical needs of asthma patients, in which states were asthma patients most and least likely to be found, is important for asthma prevention measures, and reliefs of asthma symptoms. Furthermore, having an algorithm to accurately predict who would be more in danger of suffering from asthma, will be extremely beneficial to medical providers to devise prevention methods, and better prepare and allocate resources for diagnosis and necessary treatments.
 
 The Behavioral Risk Factor Surveillance System (BRFSS) is a state-based cross-sectional telephone survey initiated by the Centers for Disease Control and Prevention (CDC). The state health departments have been conducting the survey monthly over land-lines and cellular telephones using a standardized questionnaire and other assistance from the CDC. The survey data sets contain relevant data that are useful for asthma analysis under the scope of this project.
 
-#The Data
+##Dataset
 
 The original data set was obtained from the CDC website, under the Behavioral Risk Factor Surveillance System, following this [link](https://www.cdc.gov/brfss/annual_data/annual_2017.html).
 
 The data set has 450,016 observations for 358 variables including records of respondents' answers and calculated variables that categorized original data points into groups represented by an integer each. 
 
-From 358 variables available, this project selected and worked with only demographic and lifestyle factors believed to associate with asthma by scientific research.
+The variable selection and data cleaning process were similar to previous study thanks to the CDC's effort to standardize the data input and document the variable descriptions. The cleaned dataset used in this study can be viewed [here](https://drive.google.com/file/d/1Uhs6VWlGVUhpbofnZH54kxbO752vt_D0/view?usp=sharing). 
 
-Common risks factor associated with asthma includes genetic factors, allergies, bad air quality where patients live or work, smoking, and weight status (Mayo Clinic, 2018). According to WebMD, "people with asthma have twice the risk of developing mood and anxiety disorder, including depression" (Bruce, 2009). Previous statistical research has shown that asthma is very common among young adults and adults from age 6 to 40 (NCHS, 2012). Partly because of the risk factors, asthma tends to be more common among the lower income group. Socioeconomic factors and ethnicity are strongly correlated, making income, education level and race demographic factors to be considered while exploring trends in asthma prevalence in the US population. 
-
-In short, factors relating to asthma include, but not limited to: State, Sex, Age, Race, BMI, Education Level, Income Group, Smoker Status, Physical Activities, and Depressive Disorders. The desired data set for this report will narrow down to these ten variables, and ten other variables describing conditions related to current and former asthma patients.
-
-Appendix A1 demonstrated original data "read-in" and the packages to be used, Appendix A2 displayed how to the data was cleaned and necassary data subset created. Appendix B listed the variables chosen for analysis with their respective descriptions from the CDC [Codebook](https://www.cdc.gov/brfss/annual_data/2017/pdf/codebook17_llcp-v2-508.pdf).
-
-The cleaned dataset used in this study can be viewed [here](https://drive.google.com/file/d/1Uhs6VWlGVUhpbofnZH54kxbO752vt_D0/view?usp=sharing). 
+Appendix A demonstrated data "read-in" and the packages to be used. Appendix B listed the variables chosen for analysis with their respective descriptions from the CDC [Codebook](https://www.cdc.gov/brfss/annual_data/2017/pdf/codebook17_llcp-v2-508.pdf).
 
 
-#Part 1: Descriptive Analytics
+##Descriptive Analytics - Continued
+
+Previous study investigated the demographic trends and risk factors associated with asthma, and recommended exploring asthma distribution by state and a closer look at the respondents chosen for the asthma call-back survey. The graphs and analysis below followed the future research suggestions from previous study.  
+
+###Geographic Distribution of Asthma Patients
+
+Appendix 1 displayed two maps: The green-shaded one was count distribution of respondents reported having asthma, and the blue-shaded one was a probability heat map showing asthma prevalence by state. 
+
+The two maps were slightly different. States with the darkest green shades (the largest number of respondents reported having asthma) were Arizona (AZ), Florida (FL), and Kansas (KS), and states with the lightest green shades (the least number of respondents with asthma) were Nevada (NZ) and Alaska (AK). Meanwhile, the blue-shaded map indicated that asthma was the most prevalent in West Virginia (WV) and the least prevalent in Minnesota (MN).
 
 
+###Observations for Sampled Asthma Patients
 
-#Part 2: Predictive Analytics 
+The graph in Appendix 2 showed that asthma was more commonly diagnosed for children or teenage (20 and below). This is expected since asthma tends to be more prevalent among children, and showed symptoms since childhood.
 
-##Logistic Regression - Full Model Fit Statistic
+
+Among the respondents currently having asthma, 749 of them were asked if they had an asthma attack 12 months before the interview. Less than half of them had to visit the ER or required urgent care for an asthma attack, which agreed to what DF12 showed: only 308 respondents among the 749 had an attack 12 months before the interview. (Appendix 3)
+
+
+The probability that a respondent who had an attack 12 months before the interview also required urgent care was $1- 122/308 = `r (1- 122/308)`$, which was higher than expected. The majority of respondents asked also did not go to more than 5 checkups a year for asthma. (Appendix 4)
+
+
+For more than half of the respondents who was asked if they had asthma attacks in the past 12 months, asthma symptoms showed twice a week or less. However, only 219 among 441 of those who did not have an attack 12 months before the interview showed no symptoms, which was less than half. All respondents who reported having an attack 12 months before the interview had asthma symptoms at least once. Most respondents did not report using prevention medicines for asthma, or used inhalers to stop an attack. (Appendix 5 and 6)
+
+
+##Predictive Analytics 
+
+###Logistic Regression - Full Model Fit Statistic
 
 Binary Logistic Regression Model was run on the full data, using all demographic and health risk factors: "AgeGroup", "Sex", "Race", "Income Group", "EducationLevel", "CurrentSmoker", "Exercise", "BMICategory", and "DepressiveDisorders" as predictors, predicting the log-odd of the response variable "AsthmaStatus". All predictors were categorical variables, presented as factors with levels in the logistic regression model.
 
@@ -128,7 +122,7 @@ i. *Likelihood of having Asthma Increases among Depressed People*
 A respondent with some sort of depressive disorder were much more likely to suffer from asthma, as suggested from the positive coefficient.
 
 
-##Logistic Regression Predictive Accuracy
+###Logistic Regression Predictive Accuracy
 
 **Data Partitioning and Logistic Regression Model Setup**
 
@@ -145,13 +139,44 @@ Since only a small proportion of the dataset gave a positive response (less than
 At 16% threshold, the model predicted with 84% accuracy rate, 16% error rate, 29% True-Positive (Sensitivity) Rate, and 90% True-Negative (Specificity) Rate. Thus, 30% of the times, if a respondent had a calculated asthma probability of more than 16%, the model predicted accurately that he/she would have asthma; 90% of the times, if a respondent had a calculated asthma probability of 16% or below, the model predicted accurately that he/she would not have asthma.
 
 
-#Conclusion 
 
-#Appendix 
+##Conclusions, Challenges, and Future Research
 
-##Appendix A1 - Packages and Data Read-In
+Asthma was most commonly diagnosed among children and young adults (age 20 or younger). Less than half of asthmatics had not suffer from an attack 12 months prior to the survey, but more than half had symptoms twice a week or less. Among those who had an attack, less than half needed emergency care and ER support. Inhaler usage was also low among all respondents.
 
-*Packages*
+All demographic and risk factors predictors were significant in predicting the likelihood of asthma. The interpretation generally did not differ considerably from descriptive analytics results, except for Education Level.
+
+Machine learning logistic regression algorithm with a 60% train subset classify the asthmatics correctly 29% of the times, and the non-asthmatics correctly 90% of the times, using a classification threshold of 16%. The predictive accuracy of 84% and error rate of 16% were acceptable, especially when the area under the ROC curve suggested the model performed better than chance.
+
+A [ShinyApp](https://anhstudiesdata.shinyapps.io/USAsthmaStudy2017/) was designed to display selected descriptive and predictive analytics results from both studies.
+
+###Challenges and Future Research
+
+- Data was collected from land-line phone survey. The sampled population using land-line telephones were not representative of the entire U.S. population, urging future researchers to find better survey sampling and data gathering methods.
+
+- Only very few asthmatic respondents were contacted for the asthma survey, generating a very small dataset with large number of variables the resulted in low degree of freedom, affecting predictive analytics results. If possible, a larger and more complete dataset for asthma call-back survey data would be useful for future analysis.
+
+- Missing data occurred randomly across data columns and rows were all removed for the glm() function to run properly. These data had the potential to drastically changed the modeling results, prompting future research to look into other predictive models such as trees, multinomial logistic regression, Least Discriminant Analysis (LDA), etc.
+
+- The majority of the codes in this document may not be reproducible for future dataset. More universal functions could be developed to make analysis more repeatable.
+
+- Due to time constraint, this study did not look into the change in asthma prevalence, distribution and significant of predictors over time. This could be a promising area for future research, where time-series analysis, regression with lagging variables, etc. could be performed for visualization and better predictive modeling.
+
+\pagebreak
+
+\pagebreak
+
+\pagebreak
+
+\pagebreak
+
+\pagebreak
+
+\pagebreak
+
+##Appendix 
+
+###Appendix A - Data Preparation
 
 ```{r packages, message = FALSE, warning = FALSE}
 ##Preparation
@@ -171,219 +196,16 @@ library(coefplot)
 library(ROCR)
 ```
 
-*Data Read-In*
-
-```{r data}
-if(!file.exists("./Data")){dir.create("Data")}
-
-health <- read_csv("./Data/Health2017.csv", guess_max = 69000)
-```
-
-*Data Selection*
-
-The following code selects the relevant columns for this project. 
-
-```{r variables}
-h17 <- health %>%
-  select(`_ASTHMS1`, `_RACE`, `_AGE_G`, `_BMI5CAT`, `_EDUCAG`, `INCOME2`, `_RFSMOK3`, `_TOTINDA`, SEX, ADDEPEV2,`_STATE`, ASTHMAGE, ASATTACK, ASERVIST, ASDRVIST, ASRCHKUP, ASACTLIM, ASYMPTOM, ASNOSLEP, ASTHMED3, ASINHALR)
-
-h17
-```
-
-##Appendix A2 - Data Cleaning
-
-
-__1. Variable names__
-
-The columns are then renamed to make it easier to read.
-
-```{r colnames}
-
-names(h17) <- c("AsthmaStatus", "Race", "AgeGroup", "BMICategory", "EducationLevel", "IncomeGroup", "CurrentSmoker", "Exercise", "Sex", "DepressiveDisorder", "State", "AsthmaAge", "Last12MonthsAttack", "ERVisit", "UrgentCare", "RoutineCheckUp", "LimitActivities", "AsthmaSymptoms", "AsthmaSleepDiffi", "DaysWithMeds", "InhalerForAttack")
-
-```
-
-__2. Missing values__
-
-The original data set assigns the values "7", "77", "777", "888", "9", "98", "99" or "999" to missing values, which represent "I don't know," "I don't remember," respondents refusal to answer questions, or missing responses due to other reasons. Since it wasn't clear which missing cases the numbers above represent, they were all replaced by "NAs." Blanks received similar treatment since they occur completely at random.
-
-```{r HNA}
-h_na <- h17 %>%
-  mutate(IncomeGroup = replace(IncomeGroup, IncomeGroup == 9, NA),
-         Sex = replace(Sex, Sex == 9, NA),
-         EducationLevel = replace(EducationLevel, EducationLevel == 9, NA),
-         Race = replace(Race, Race == 9, NA),
-         AgeGroup = replace(AgeGroup, AgeGroup == 9, NA),
-         AsthmaStatus = replace(AsthmaStatus, AsthmaStatus == 9, NA),
-         Exercise = replace(Exercise, Exercise == 9, NA),
-         CurrentSmoker = replace(CurrentSmoker , CurrentSmoker == 9, NA),
-         DepressiveDisorder = replace(DepressiveDisorder, DepressiveDisorder == 7 | DepressiveDisorder == 9 | DepressiveDisorder == " ", NA)) %>%
-
-    mutate(AsthmaAge = replace(AsthmaAge, AsthmaAge == 98 | AsthmaAge == 99 | AsthmaAge == " ", NA),
-         Last12MonthsAttack = replace(Last12MonthsAttack, Last12MonthsAttack == 7 | Last12MonthsAttack == 9 | Last12MonthsAttack == " ", NA),
-         ERVisit = replace(ERVisit, ERVisit == 98 | ERVisit == " ", NA),
-         UrgentCare = replace(UrgentCare, UrgentCare == 98 | UrgentCare == " ", NA),
-         RoutineCheckUp = replace(RoutineCheckUp, RoutineCheckUp == 98 | RoutineCheckUp == 99 | RoutineCheckUp == " ", NA),
-         LimitActivities = replace(LimitActivities, LimitActivities == 777 | LimitActivities == 999 | LimitActivities == " ", NA),
-         AsthmaSymptoms = replace(AsthmaSymptoms, AsthmaSymptoms == 7 | AsthmaSymptoms == 9 | AsthmaSymptoms == " ", NA),
-         AsthmaSleepDiffi = replace(AsthmaSleepDiffi, AsthmaSleepDiffi == 7 | AsthmaSleepDiffi == 9 | AsthmaSleepDiffi == " ", NA),
-         DaysWithMeds = replace(DaysWithMeds, DaysWithMeds == 7 | DaysWithMeds == 9 | DaysWithMeds == " ", NA),
-         InhalerForAttack = replace(InhalerForAttack, InhalerForAttack == 7 | InhalerForAttack == 9 | InhalerForAttack == " ", NA))
-```
-
-
-__3. Data coding__
-
-_3.1 Binary variables_
-
-The following codes reassign dummy values to binary variables. Binary variables in this data set were represented by number 1 or 2. For consistency, they were standardized to number 0 and 1. This change also made it easier to run regression models later. 
-
-```{r binaryfix}
-hbinfix <- h_na %>%
-  mutate(Sex = as.numeric(Sex == ifelse(Sex == 2, 0, 1)),
-         DepressiveDisorder = as.numeric(DepressiveDisorder == ifelse(DepressiveDisorder == 2, 0, 1)),
-         Exercise = as.numeric(Exercise == ifelse(Exercise == 2, 0, 1)),
-         CurrentSmoker = as.numeric(CurrentSmoker == ifelse(CurrentSmoker == 2, 1, 1)),
-         Last12MonthsAttack = as.numeric(Last12MonthsAttack == ifelse(Last12MonthsAttack == 2, 0, 1)))
-```
-
-Notes:
-
-* For Sex: 0 represents Female, 1 represents Male, 
-* For Depressive Disorders: 1 = Respondent has a depressive disorder, 0 = Respondent doesn't report having a depressive disorder, 
-* For Exercise: 1 = Respondent reported having physical activities in the last 30 days, 0 = Respondent reported not having physical activities in the last 30 days,
-* For CurrentSmoker: 1 = Respondent reported having smoked in the last week, 0 = Respondent reported not having smoked in the last week,
-* For Last12MonthsAttack: 1 = Respondents had an asthma attack or an asthma episode during the 12 month period before the interview, 0 = Respondents had not had an attack or an episode for a year.
-
-
-_3.2 Non-binary variables_
-
-Similar to binary variables, other categorical variables were also put into groups represented by integers. The following codes return the original meanings to the integer representations. The new variable names were modified from the questionnaire used to collect data for this data set.
-
-
-```{r nonbinaryfix}
-hfix <- hbinfix %>%
-  #mutate(AsthmaAge = replace(AsthmaAge, AsthmaAge == 97, 10)) %>%
-         #AsthmaAge = replace(AsthmaAge, AsthmaAge %in% c(11:20), "Age 11 to 20"),
-         #AsthmaAge = replace(AsthmaAge, AsthmaAge %in% c(21:30), "Age 21 to 30"),
-         #AsthmaAge = replace(AsthmaAge, AsthmaAge %in% c(31:40), "Age 31 to 40"),
-         #AsthmaAge = replace(AsthmaAge, AsthmaAge %in% c(41:50), "Age 41 to 50"),
-         #AsthmaAge = replace(AsthmaAge, AsthmaAge %in% c(51:60), "Age 51 to 60"),
-         #AsthmaAge = replace(AsthmaAge, AsthmaAge %in% c(61:70), "Age 61 to 70"),
-         #AsthmaAge = replace(AsthmaAge, AsthmaAge %in% c(71:80), "Age 71 to 80"),
-         #AsthmaAge = replace(AsthmaAge, AsthmaAge %in% c(81:96), "Age Above 80")) %>%
-  
-  mutate(LimitActivities = replace(LimitActivities, LimitActivities == 888, 0)) %>%
-  
-  mutate(ERVisit = replace(ERVisit, ERVisit %in% c(81:87), "More than 80 times"),
-         ERVisit = replace(ERVisit, ERVisit == 88, 0),
-         ERVisit = replace(ERVisit, ERVisit %in% c(1:4), "Less than 5 Times"),
-         ERVisit = replace(ERVisit, ERVisit %in% c(5:20), "5 to 20 times"),
-         ERVisit = replace(ERVisit, ERVisit %in% c(21:50), "21 to 50 times"),
-         ERVisit = replace(ERVisit, ERVisit %in% c(51:80), "51 to 80 times")) %>%
-  
-  mutate(UrgentCare = replace(UrgentCare, UrgentCare %in% c(81:87), "More than 80 times"),
-         UrgentCare = replace(UrgentCare, UrgentCare == 88, 0),
-         UrgentCare = replace(UrgentCare, UrgentCare %in% c(1:4), "Less than 5 Times"),
-         UrgentCare = replace(UrgentCare, UrgentCare %in% c(5:20), "5 to 20 times"),
-         UrgentCare = replace(UrgentCare, UrgentCare %in% c(21:50), "21 to 50 times"),
-         UrgentCare = replace(UrgentCare, UrgentCare %in% c(51:80), "51 to 80 times")) %>%
-  
-  mutate(RoutineCheckUp = replace(RoutineCheckUp, RoutineCheckUp %in% c(81:87), "More than 80 times"),
-         RoutineCheckUp = replace(RoutineCheckUp, RoutineCheckUp == 88, "None"),
-         RoutineCheckUp = replace(RoutineCheckUp, RoutineCheckUp %in% c(1:4), "Less than 5 Times"),
-         RoutineCheckUp = replace(RoutineCheckUp, RoutineCheckUp %in% c(5:20), "5 to 20 times"),
-         RoutineCheckUp = replace(RoutineCheckUp, RoutineCheckUp %in% c(21:50), "21 to 50 times"),
-         RoutineCheckUp = replace(RoutineCheckUp, RoutineCheckUp %in% c(51:80), "51 to 80 times")) %>%
-  
-  mutate(AsthmaSymptoms = replace(AsthmaSymptoms, AsthmaSymptoms == 1, "Less than once a Week"),
-         AsthmaSymptoms = replace(AsthmaSymptoms, AsthmaSymptoms == 2, "Once or twice a week"),
-         AsthmaSymptoms = replace(AsthmaSymptoms, AsthmaSymptoms == 3, "More than twice, not every day"),
-         AsthmaSymptoms = replace(AsthmaSymptoms, AsthmaSymptoms == 4, "Every day, not all the time"),
-         AsthmaSymptoms = replace(AsthmaSymptoms, AsthmaSymptoms == 5, "Every day, all the time"),
-         AsthmaSymptoms = replace(AsthmaSymptoms, AsthmaSymptoms == 8, "Not at any time")) %>%
-  
-  mutate(AsthmaSleepDiffi = replace(AsthmaSleepDiffi, AsthmaSleepDiffi == 1, "One or Two"),
-         AsthmaSleepDiffi = replace(AsthmaSleepDiffi, AsthmaSleepDiffi == 2, "Three  or Four"),
-         AsthmaSleepDiffi = replace(AsthmaSleepDiffi, AsthmaSleepDiffi == 3, "Five"),
-         AsthmaSleepDiffi = replace(AsthmaSleepDiffi, AsthmaSleepDiffi == 4, "Six to Ten"),
-         AsthmaSleepDiffi = replace(AsthmaSleepDiffi, AsthmaSleepDiffi == 5, "More than Ten"),
-         AsthmaSleepDiffi = replace(AsthmaSleepDiffi, AsthmaSleepDiffi == 8, "None")) %>%
-  
-  mutate(DaysWithMeds = replace(DaysWithMeds, DaysWithMeds == 1, "1 to 14 days"),
-         DaysWithMeds = replace(DaysWithMeds, DaysWithMeds == 2, "15 to 24 days"),
-         DaysWithMeds = replace(DaysWithMeds, DaysWithMeds == 3, "25 to 30 days"),
-         DaysWithMeds = replace(DaysWithMeds, DaysWithMeds == 8, "None")) %>%
-  
-  mutate(InhalerForAttack = replace(InhalerForAttack, InhalerForAttack == 1, "1 to 4 times"),
-         InhalerForAttack = replace(InhalerForAttack, InhalerForAttack == 2, "5 to 14 times"),
-         InhalerForAttack = replace(InhalerForAttack, InhalerForAttack == 3, "15 to 29 times"),
-         InhalerForAttack = replace(InhalerForAttack, InhalerForAttack == 4, "30 to 59 times"),
-         InhalerForAttack = replace(InhalerForAttack, InhalerForAttack == 5, "60 to 99 times"),
-         InhalerForAttack = replace(InhalerForAttack, InhalerForAttack == 6, "100 or more times"),
-         InhalerForAttack = replace(InhalerForAttack, InhalerForAttack == 8, "Never")) %>%
-
-  mutate(BMICategory = replace(BMICategory, BMICategory == 1, "Underweight"),
-         BMICategory = replace(BMICategory, BMICategory == 2, "Normal"),
-         BMICategory = replace(BMICategory, BMICategory == 3, "Overweight"),
-         BMICategory = replace(BMICategory, BMICategory == 4, "Obese")) %>%
-  
-  mutate(Race = replace(Race, Race == 1, "White"),
-         Race = replace(Race, Race == 2, "Black"),
-         Race = replace(Race, Race == 3, "American Indian/Alaskan Native"),
-         Race = replace(Race, Race == 4, "Asian"),
-         Race = replace(Race, Race == 5, "Native Hawaiian/other Pacific Islander"),
-         Race = replace(Race, Race == 6, "Others"),
-         Race = replace(Race, Race == 7, "Multiracial, non-Hispanic"),
-         Race = replace(Race, Race == 8, "Hispanic")) %>%
-  
-  mutate(EducationLevel = replace(EducationLevel, EducationLevel == 1, "Did not Attend High School"),
-         EducationLevel = replace(EducationLevel, EducationLevel == 2, "Graduated High School"),
-         EducationLevel = replace(EducationLevel, EducationLevel == 3, "Attended College/Technical School"),
-         EducationLevel = replace(EducationLevel, EducationLevel == 4, "Graduated from College/Technical School")) %>%
-  
-  mutate(AgeGroup = replace(AgeGroup, AgeGroup == 1, "18 to 24"),
-         AgeGroup = replace(AgeGroup, AgeGroup == 2, "25 to 34"),
-         AgeGroup = replace(AgeGroup, AgeGroup == 3, "35 to 44"),
-         AgeGroup = replace(AgeGroup, AgeGroup == 4, "45 to 54"),
-         AgeGroup = replace(AgeGroup, AgeGroup == 5, "55 to 64"),
-         AgeGroup = replace(AgeGroup, AgeGroup == 6, "65 and above")) %>%
-  
-  mutate(IncomeGroup = replace(IncomeGroup, IncomeGroup == 1, "less than $10,000"),
-         IncomeGroup = replace(IncomeGroup, IncomeGroup == 2, "$10,000 to $14,999"),
-         IncomeGroup = replace(IncomeGroup, IncomeGroup == 3, "$15,000 to $19,999"),
-         IncomeGroup = replace(IncomeGroup, IncomeGroup == 4, "$20,000 to $24,999"),
-         IncomeGroup = replace(IncomeGroup, IncomeGroup == 5, "$25,000 to $34,999"),
-         IncomeGroup = replace(IncomeGroup, IncomeGroup == 6, "$35,000 to $49,999"),
-         IncomeGroup = replace(IncomeGroup, IncomeGroup == 7, "$50,000 to $74,999"),
-         IncomeGroup = replace(IncomeGroup, IncomeGroup == 8, "$75,000 or above"),
-         IncomeGroup = replace(IncomeGroup, IncomeGroup == 77 | IncomeGroup == 99 | IncomeGroup == " ", NA)) %>%
-  
-  mutate(AsthmaStatus = replace(AsthmaStatus, AsthmaStatus == 1, "Current"),
-         AsthmaStatus = replace(AsthmaStatus, AsthmaStatus == 2, "Former"),
-         AsthmaStatus = replace(AsthmaStatus, AsthmaStatus == 3, "Never"))
-
-```
-
-
-
-
-__4. Finalized dataset__
-
-The codes below arrange the columns in the data set into the desired order and split the data set into smaller ones.
-
-```{r finalData}
-health2017 <- hfix %>% 
-  select(AsthmaStatus, AgeGroup, Sex, Race, IncomeGroup, EducationLevel, BMICategory, CurrentSmoker, Exercise, DepressiveDisorder, State, AsthmaAge, Last12MonthsAttack, ERVisit, UrgentCare, RoutineCheckUp, LimitActivities, AsthmaSymptoms, AsthmaSleepDiffi, DaysWithMeds, InhalerForAttack)
-
-health2017
+```{r data, message = FALSE, warning = FALSE, cache = TRUE}
+if(!file.exists("Data")){dir.create("Data")}
+asthma <- read_csv("./Data/Asthma2017.csv", guess_max = 69000)
 
 #remove missing values for AsthmaStatus only
-health2017_narm <- health2017 %>%
+health2017_narm <- asthma %>%
   filter(!is.na(AsthmaStatus))
 
 #Data for all respondents who reported formerlly or currently having asthma 
-asthma2017 <- health2017 %>%
+asthma2017 <- asthma %>%
   filter(AsthmaStatus == "Current" | AsthmaStatus == "Former")
 
 #Data for all respondents who reported currently having asthma
@@ -395,12 +217,7 @@ curr_ast_17
 #Data for all respondents who reported formerlly having asthma
 form_ast_17 <- asthma2017 %>%
   filter(AsthmaStatus == "Former")
-
-form_ast_17
-
-#write.csv(health2017, file = "Asthma2017_update.csv", row.names = FALSE)
 ```
-
 
 ###Appendix B - Variable Description
 
@@ -448,7 +265,7 @@ Below is a summary of the variables, similar to that from previous study.
 
 *	LimitActivities: Number of times respondents were unable to work or carry out activities because of asthma during the 12 month period before the interview
 
-##Appendix 1 - Asthma Geographical Distribution
+###Appendix 1 - Asthma Geographical Distribution
 
 ```{r Map, fig.height = 6, fig.width = 9}
 CurrAsthmaState <- curr_ast_17 %>%
@@ -724,7 +541,7 @@ auc <- performance(pred,"auc")
 c(auc@y.name[[1]], auc@y.values[[1]])
 ```
 
-###Appendix 12 - Confusion Matrix
+###Appendix - Confusion Matrix
 
 * Confusion Matrix
 ```{r conf.mat}
@@ -765,3 +582,7 @@ names(logit.rates.50) <- c("Accuracy Rate", "Error Rate", "True Positives", "Tru
 options(scipen="4")
 print(logit.rates.50, digits=2)
 ```
+
+##References
+
+1. Mayo Clinic. (2018). __Asthma__. _Mayo Clinic_ (2018). Retrieved from  https://www.mayoclinic.org/diseases-conditions/asthma/symptoms-causes/syc-20369653 in 12/1/2018
